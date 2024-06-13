@@ -1,0 +1,68 @@
+# Biblioteca para análisis de imágenes cerebrales
+# Utilizada para el análisis y visualización de imágenes cerebrales funcionales y estructurales.
+nilearn
+
+# Biblioteca para visualización 3D interactiva
+# Proporciona herramientas para la visualización interactiva de datos 3D, especialmente útil para visualizar modelos y datos volumétricos.
+pyvistaqt
+
+# Biblioteca para análisis de señales EEG/MEG
+# MNE permite el análisis de datos de electroencefalografía (EEG) y magnetoencefalografía (MEG), incluyendo preprocesamiento, análisis estadístico y visualización.
+mne
+
+# Herramientas para el análisis de datos de EEG/MEG
+# Biblioteca complementaria a MNE, proporcionando herramientas adicionales para el análisis y preprocesamiento de datos EEG/MEG.
+python-picard
+
+# Biblioteca para análisis de señales de sueño
+# YASA se especializa en el análisis de señales de sueño, incluyendo la detección de eventos y la extracción de características.
+yasa
+
+# Biblioteca para la manipulación de diccionarios anidados
+# DotMap permite trabajar con diccionarios anidados de una manera más fácil y legible.
+dotmap
+
+# Biblioteca para análisis de conectividad cerebral
+# MNE Connectivity proporciona herramientas para el análisis de la conectividad funcional y efectiva del cerebro a partir de datos de EEG/MEG.
+mne_connectivity
+
+# Biblioteca para el monitoreo de uso de memoria en Python
+# PyMpler ofrece herramientas para el monitoreo y análisis del uso de memoria en aplicaciones Python.
+pympler
+
+# Biblioteca para el análisis de series temporales
+# Pyts proporciona herramientas para el análisis de series temporales, incluyendo transformaciones, extracción de características y clasificación.
+pyts
+
+# Biblioteca para el análisis de sistemas complejos
+# Pyunicorn es utilizada para el análisis y modelado de sistemas complejos, incluyendo redes, dinámica no lineal y sistemas caóticos.
+pyunicorn
+
+# Biblioteca para la optimización evolutiva
+# DEAP es una biblioteca para la implementación de algoritmos de optimización evolutiva, útil para problemas de optimización complejos.
+deap
+
+# Biblioteca para la optimización de hiperparámetros
+# Scikit-Optimize proporciona herramientas para la optimización de hiperparámetros de modelos de aprendizaje automático.
+scikit-optimize
+
+# Biblioteca para transformaciones Wavelet en Python.
+# PyWavelets (pywavelets) proporciona implementaciones eficientes de transformaciones Wavelet para análisis de señales y procesamiento de imágenes.pywt
+pywavelets
+
+# Biblioteca para modelado estadístico en Python.
+# Statsmodels ofrece herramientas para el análisis estadístico, incluyendo modelos lineales, modelos de series temporales, análisis de datos longitudinales y más.
+statsmodels
+
+# Biblioteca principal de PyTorch.
+# PyTorch (torch) es un marco de aprendizaje profundo de código abierto que proporciona una infraestructura flexible y dinámica para la creación y entrenamiento de modelos de aprendizaje profundo.
+torch
+
+# Biblioteca que extiende PyTorch con utilidades para la visión por computadora.
+# TorchVision es una biblioteca complementaria de PyTorch que proporciona herramientas y conjuntos de datos predefinidos para tareas comunes de visión por computadora, como la clasificación de imágenes y la detección de objetos.
+torchvision
+
+# Biblioteca que extiende PyTorch con funciones para el procesamiento de audio.
+# TorchAudio es una biblioteca complementaria de PyTorch que proporciona funciones y conjuntos de datos predefinidos para el procesamiento de audio, incluyendo la lectura y escritura de archivos de audio, transformaciones de audio y conjuntos de datos para tareas de aprendizaje automático relacionadas con el audio.
+torchaudio
+

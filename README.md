@@ -72,7 +72,79 @@ Se construyó una API configurada mediante un diccionario config. Este diccionar
           'excitability_factor':0.01,
           'device': 'cpu'
       }
+
+## Comentarios sobre los Parámetros de Configuración
   
+  ### 1. `seed`
+  - **Descripción**: Semilla para la inicialización de números aleatorios.
+  - **Posibles Valores**: Entero (e.g., `1`, `42`).
+  - **Comentario**: Útil para asegurar la reproducibilidad de los experimentos.
+  
+  ### 2. `init_type`
+  - **Descripción**: Tipo de inicialización de los pesos.
+  - **Posibles Valores**: `'orthogonal'`, `'uniform'`, `'normal'`.
+  - **Comentario**: Diferentes métodos de inicialización pueden afectar la convergencia del modelo.
+  
+  ### 3. `init_std`
+  - **Descripción**: Desviación estándar para la inicialización normal de los pesos.
+  - **Posibles Valores**: Flotante (e.g., `0.01`).
+  - **Comentario**: Controla la magnitud inicial de los pesos cuando se utiliza inicialización normal.
+  
+  ### 4. `init_mean`
+  - **Descripción**: Media para la inicialización normal de los pesos.
+  - **Posibles Valores**: Flotante (e.g., `0`).
+  - **Comentario**: Establece la media de los pesos iniciales en una distribución normal.
+  
+  ### 5. `input_size`
+  - **Descripción**: Tamaño de la entrada.
+  - **Posibles Valores**: Entero (e.g., `10`).
+  - **Comentario**: Define la dimensionalidad de los datos de entrada.
+  
+  ### 6. `n_internal_units`
+  - **Descripción**: Tamaño del reservorio, indicando el número de unidades internas o nodos en el reservorio.
+  - **Posibles Valores**: Entero (e.g., `480`).
+  - **Comentario**: Un número mayor de unidades internas puede aumentar la capacidad del modelo para capturar dinámicas complejas, pero también incrementa el costo computacional.
+  
+  ### 7. `spectral_radius`
+  - **Descripción**: El mayor valor propio del reservorio.
+  - **Posibles Valores**: Flotante (e.g., `0.59`).
+  - **Comentario**: Es una medida de la dispersión de las activaciones en el reservorio y puede afectar las propiedades dinámicas del reservorio.
+  
+  ### 8. `leak`
+  - **Descripción**: Cantidad de fuga en la actualización del estado del reservorio.
+  - **Posibles Valores**: Flotante entre `0` y `1` (e.g., `0.4`).
+  - **Comentario**: Controla cuánta información del estado anterior del reservorio se mantiene en cada iteración. Un valor menor que 1 introduce un decaimiento en el estado del reservorio, afectando la dinámica y la capacidad de memoria del reservorio.
+  
+  ### 9. `connectivity`
+  - **Descripción**: Porcentaje de conexiones no nulas en el reservorio.
+  - **Posibles Valores**: Flotante entre `0` y `1` (e.g., `0.6`).
+  - **Comentario**: Controla la dispersión del reservorio.
+  
+  ### 10. `input_scaling`
+  - **Descripción**: Escala de los pesos de entrada.
+  - **Posibles Valores**: Flotante (e.g., `0.1`).
+  - **Comentario**: Controla la fuerza de la señal de entrada.
+  
+  ### 11. `noise_level`
+  - **Descripción**: Nivel de ruido en la actualización del estado del reservorio.
+  - **Posibles Valores**: Flotante (e.g., `0.1`).
+  - **Comentario**: Introduce perturbaciones aleatorias en la dinámica del reservorio.
+  
+  ### 12. `n_drop`
+  - **Descripción**: Estados transitorios a eliminar.
+  - **Posibles Valores**: Entero (e.g., `100`).
+  - **Comentario**: Los estados iniciales del reservorio a menudo están afectados por las condiciones iniciales y pueden no ser representativos de la verdadera dinámica del reservorio.
+  
+  ### 13. `washout`
+  - **Descripción**: Método de lavado del reservorio.
+  - **Posibles Valores**: `'init'`, `'rand'`.
+  - **Comentario**: Controla cómo se maneja el estado inicial del reservorio.
+  
+  ### 14. `use_input_bias`
+  - **Descripción**: Si se usa sesgo en la capa de entrada.
+  - **Posibles Valores**: `True`, `False`.
+  - **Comentario**
+
 # Hiperparámetros del Modelo
 
 

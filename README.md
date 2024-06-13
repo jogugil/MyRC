@@ -23,7 +23,9 @@ Las señales EEG procesadas en este proyecto permiten la reconstrucción y predi
 
 Se construyó una API configurada mediante un diccionario config. Este diccionario contiene diferentes parámetros que se transforman en hiperparámetros para el modelo, permitiendo una fácil personalización y ajuste del modelo a diferentes necesidades experimentales.
 
-## Ejemplo de Diccionario de Configuración
+# Hiperparámetros del Modelo implementado: 
+
+## Ejemplo de Diccionario de Configuración para los hiperparámetros:
 
       config = {
           'seed': 1,
@@ -144,8 +146,6 @@ Se construyó una API configurada mediante un diccionario config. Este diccionar
   - **Descripción**: Si se usa sesgo en la capa de entrada.
   - **Posibles Valores**: `True`, `False`.
   - **Comentario**
-
-# Hiperparámetros del Modelo
 
 
 # Estructura del Proyecto

@@ -1,0 +1,2 @@
+# MyRC
+Reservoir Computing ESN

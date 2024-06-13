@@ -14,10 +14,6 @@ mne
 # Biblioteca complementaria a MNE, proporcionando herramientas adicionales para el análisis y preprocesamiento de datos EEG/MEG.
 python-picard
 
-# Biblioteca para análisis de señales de sueño
-# YASA se especializa en el análisis de señales de sueño, incluyendo la detección de eventos y la extracción de características.
-yasa
-
 # Biblioteca para la manipulación de diccionarios anidados
 # DotMap permite trabajar con diccionarios anidados de una manera más fácil y legible.
 dotmap
@@ -46,6 +42,11 @@ deap
 # Scikit-Optimize proporciona herramientas para la optimización de hiperparámetros de modelos de aprendizaje automático.
 scikit-optimize
 
+# Scikit-mobility es una biblioteca de Python diseñada para el análisis y simulación de datos de movilidad humana. Facilita la manipulación, 
+# visualización y análisis de trayectorias de movimiento, siendo útil en campos como transporte, urbanismo y epidemiología. Basada en el 
+# ecosistema de scikit-learn, permite aplicar técnicas de machine learning y estadísticas a datos de movilidad.
+scikit-mobility
+
 # Biblioteca para transformaciones Wavelet en Python.
 # PyWavelets (pywavelets) proporciona implementaciones eficientes de transformaciones Wavelet para análisis de señales y procesamiento de imágenes.pywt
 pywavelets
@@ -65,4 +66,14 @@ torchvision
 # Biblioteca que extiende PyTorch con funciones para el procesamiento de audio.
 # TorchAudio es una biblioteca complementaria de PyTorch que proporciona funciones y conjuntos de datos predefinidos para el procesamiento de audio, incluyendo la lectura y escritura de archivos de audio, transformaciones de audio y conjuntos de datos para tareas de aprendizaje automático relacionadas con el audio.
 torchaudio
+
+# Nilearn es una biblioteca de Python destinada al análisis y visualización de datos neuroimagen (principalmente fMRI, PET, y EEG). Facilita la manipulación, 
+# análisis y representación gráfica de estos datos, integrándose con otras bibliotecas científicas como NumPy, SciPy y scikit-learn. Nilearn es comúnmente
+# utilizada en neurociencia y neuroinformática para realizar estudios sobre el cerebro y sus funciones.
+nilearn
+
+# UMAP-learn es una biblioteca de Python para la reducción de dimensionalidad. Utiliza técnicas avanzadas de aprendizaje de la geometría del espacio de datos 
+# para proyectar datos de alta dimensión a un espacio de menor dimensión, preservando tanto la estructura local como global. Es comúnmente utilizada en machine
+# learning y visualización de datos para explorar patrones y relaciones en conjuntos de datos complejos.
+umap-learn
 

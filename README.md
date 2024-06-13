@@ -238,9 +238,8 @@ La arquitectura del RC ofrece varias ventajas específicas:
 - **Proyección a Espacios de Mayor Dimensión:** La proyección de las señales de entrada a un espacio de mayor dimensión en el reservorio facilita la separación de características complejas y no lineales, mejorando la capacidad del modelo para distinguir entre diferentes patrones de señal.
 - **Eficiencia en la Extracción de Características:** La capacidad del RC para trabajar con las señales en bruto, sin necesidad de una extracción de características previa, permite una modelización más directa y potencialmente más precisa de las señales EEG.
   
-# Estudio Interno de Hiperparámetros
-## Hiperparámetros en las Ecuaciones Diferenciales del Reservoir Computing
-
+# Hiperparámetros
+ 
 ### 1. Cantidad de Neuronas en el Reservorio (\(N\))
 
 La cantidad de neuronas en el reservorio afecta la dimensionalidad del estado del reservorio \(x(t)\) en las ecuaciones diferenciales del RC. Matemáticamente, podemos representarlo como:

@@ -1,5 +1,6 @@
-# Biblioteca para análisis de imágenes cerebrales
-# Utilizada para el análisis y visualización de imágenes cerebrales funcionales y estructurales.
+# Nilearn es una biblioteca de Python destinada al análisis y visualización de datos neuroimagen (principalmente fMRI, PET, y EEG). Facilita la manipulación, 
+# análisis y representación gráfica de estos datos, integrándose con otras bibliotecas científicas como NumPy, SciPy y scikit-learn. Nilearn es comúnmente
+# utilizada en neurociencia y neuroinformática para realizar estudios sobre el cerebro y sus funciones.
 nilearn
 
 # Biblioteca para visualización 3D interactiva
@@ -66,11 +67,6 @@ torchvision
 # Biblioteca que extiende PyTorch con funciones para el procesamiento de audio.
 # TorchAudio es una biblioteca complementaria de PyTorch que proporciona funciones y conjuntos de datos predefinidos para el procesamiento de audio, incluyendo la lectura y escritura de archivos de audio, transformaciones de audio y conjuntos de datos para tareas de aprendizaje automático relacionadas con el audio.
 torchaudio
-
-# Nilearn es una biblioteca de Python destinada al análisis y visualización de datos neuroimagen (principalmente fMRI, PET, y EEG). Facilita la manipulación, 
-# análisis y representación gráfica de estos datos, integrándose con otras bibliotecas científicas como NumPy, SciPy y scikit-learn. Nilearn es comúnmente
-# utilizada en neurociencia y neuroinformática para realizar estudios sobre el cerebro y sus funciones.
-nilearn
 
 # UMAP-learn es una biblioteca de Python para la reducción de dimensionalidad. Utiliza técnicas avanzadas de aprendizaje de la geometría del espacio de datos 
 # para proyectar datos de alta dimensión a un espacio de menor dimensión, preservando tanto la estructura local como global. Es comúnmente utilizada en machine

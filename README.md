@@ -2,7 +2,10 @@
 
 
 Este proyecto implementa un modelo de Reservoir Computing Echo State Network (ESN) para su estudio e implementación. Se ha creado una API para evaluar el uso de este modelo en el procesamiento de señales temporales presentes en los canales de un EEG. El objetivo es la reconstrucción y predicción de señales, la obtención no supervisada de estados neuronales, y la clasificación de tipos de sujetos según los patrones de la dinámica temporal que conserva el estado final del RC para cada sujeto. En concreto, procesamos diferentes sujetos que se clasifican en jóvenes adultos y mayores.
-Descripción del Proyecto
+
+![imagen](https://github.com/jogugil/MyRC/assets/15160072/63c28d95-1af2-46b4-87f2-736ee564df76)
+
+ 
 
 # Generación de Datos Sintéticos
 
@@ -98,7 +101,10 @@ Para ejecutar la evaluación, usa el siguiente comando:
 
 ## Características de las Señales EEG
 
-Las señales de electroencefalografía (EEG) son una representación directa de la actividad eléctrica del cerebro. Estas señales se generan principalmente por los potenciales postsinápticos de las neuronas piramidales en la corteza cerebral, que crean campos eléctricos detectables en el cuero cabelludo. El EEG es una herramienta no invasiva que permite registrar estas señales a través de electrodos colocados en la superficie del cuero cabelludo.
+Las señales de electroencefalografía (EEG) son una representación directa de la actividad eléctrica del cerebro. Estas señales se generan principalmente por los potenciales postsinápticos de las neuronas piramidales en la corteza cerebral, que crean campos eléctricos detectables en el cuero cabelludo. El EEG es una herramienta no invasiva que permite registrar estas señales a través de electrodos colocados en la superficie del cuero cabelludo. 
+
+![imagen](https://github.com/jogugil/MyRC/assets/15160072/64fd9a4a-99d1-4904-a285-3c9548122e8a)
+
 
 Las señales EEG se forman mediante la superposición de múltiples corrientes sinápticas generadas por la actividad sincronizada de grandes poblaciones neuronales. Las corrientes sinápticas crean dipolos eléctricos cuyos campos se suman y pueden ser detectados a nivel macroelectrodo. La amplitud y frecuencia de las ondas EEG reflejan la dinámica de la actividad neuronal subyacente.
 
@@ -139,6 +145,9 @@ Las señales EEG son inherentemente ruidosas, por lo que se debe aplicar un filt
 ### Eliminación de Artefactos
 
 Los artefactos en las señales EEG, como los movimientos oculares y la actividad muscular, deben ser identificados y eliminados. Para esto, se puede utilizar la librería MNE-Python, que proporciona herramientas avanzadas para la detección y eliminación de artefactos mediante técnicas como el Análisis de Componentes Independientes (ICA).
+
+![imagen](https://github.com/jogugil/MyRC/assets/15160072/715a2b6b-d36f-4021-b083-5def6ae65973)
+
 
 ### Segmentación de Datos
 
@@ -233,6 +242,9 @@ A diferencia del reservorio, los pesos \( W_{out} \) en la capa de salida son en
 
 ## Justificación de la Arquitectura
 
+![imagen](https://github.com/jogugil/MyRC/assets/15160072/d1687db7-6f64-40a6-aad9-8aff465bbe56)
+
+
 La arquitectura del RC ofrece varias ventajas específicas:
 
 - **Simplicidad y Eficiencia:** La capa de entrada y el reservorio no requieren entrenamiento, lo que reduce significativamente la complejidad computacional. Solo la capa de salida es entrenable, lo que simplifica el proceso de ajuste del modelo.
@@ -323,9 +335,19 @@ La selección óptima de hiperparámetros requiere una validación cuidadosa y p
 ---
 
 Al comprender y ajustar estos hiperparámetros, se puede optimizar el rendimiento del Reservoir Computing en diversas aplicaciones, como el análisis de señales EEG, mejorando tanto la precisión como la eficiencia del modelo.
+
 ## Datos Sintéticos
 
 Los datos sintéticos son generados artificialmente para simular situaciones específicas o para llenar lagunas en conjuntos de datos reales. En esta sección, se explica cómo se generaron datos sintéticos para simular señales temporales de los diferentes electrodos en cada EEG de cada sujeto. Se describen los métodos y algoritmos utilizados para generar estos datos sintéticos y cómo se ajustan a las características de los datos reales, incluyendo la adición de ruido para simular condiciones más realistas.
+
+### Deep ESN
+
+Se entrega un notebook que contiene una posible implementación de un modelo DeepESN con el modelo ESN implementado en el proyecto. Solo se implementa el modelo DeepESN pero no se ha utilizado en el proyecto ni se ha estudiado una posible optimización de la arquitectura. Se deja como trabajo futuro.
+
+![imagen](https://github.com/jogugil/MyRC/assets/15160072/ba457b14-1ed1-4ddf-b2b3-4b8df825851c)
+
+![imagen](https://github.com/jogugil/MyRC/assets/15160072/84ff6c2c-0926-4d35-a774-da1ecf57ecc3)
+
 
 ### Generación de Datos Sintéticos de EEG
 
@@ -369,6 +391,8 @@ Este enfoque asegura que los datos sintéticos sean representativos de las seña
 
 
 # Resultados
+
+![imagen](https://github.com/jogugil/MyRC/assets/15160072/af2a6ab2-602c-4c89-9cb0-23203c2c4f17)
 
 Los resultados de las evaluaciones se guardan en la carpeta results/.
 

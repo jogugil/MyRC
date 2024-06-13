@@ -75,12 +75,14 @@ Se construyó una API configurada mediante un diccionario config. Este diccionar
 
 # Estructura del Proyecto
 
-    MyRCClass.py: Implementación de la clase MyRCClass.
-    fit_evaluate.py: Script para evaluar el rendimiento del modelo.
-    data/: Carpeta con datos de prueba y entrenamiento.
-    notebooks/: Notebooks de Jupyter para experimentos y análisis.
-    README.md: Descripción del proyecto.
-    presentation/: Presentación del proyecto.
+    synthetic_eeg_v10.ipynb: Notebook donde se implementan datos sinteticos EEG y se utiliza el modelo MyRC para sus procesamiento.
+                . Reconstrucciíon y predicción de señales temporales de los datos sintetigcos EEG
+                . Clustering y clasifiación por métodos no supervisados de los datos sinteticos EEG
+                . Clasificación por mñetodos supervisados de los datos sinteticos EEG
+    data/: Carpeta con datos de prueba y entrenamiento.No se tienen por temas de privacidad
+    base/: librerias base donde seimplementa el modelo RC ESN y otra funciones auxiliares.
+    README.md: Descripción del proyecto.EN CREACIÓN
+    presentation/: Presentación del proyecto.EN CREACIÓN
 
 # Instalación
 

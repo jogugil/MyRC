@@ -19,3 +19,86 @@ Las señales EEG procesadas en este proyecto permiten la reconstrucción y predi
 # API Construida
 
 Se construyó una API configurada mediante un diccionario config. Este diccionario contiene diferentes parámetros que se transforman en hiperparámetros para el modelo, permitiendo una fácil personalización y ajuste del modelo a diferentes necesidades experimentales.
+
+## Ejemplo de Diccionario de Configuración
+
+  config = {
+      'seed': 1,
+      'init_type':'orthogonal',
+      'init_std':0.01,
+      'init_mean':0,
+      'input_size':10,
+      'n_internal_units': 480,
+      'spectral_radius': 0.59,
+      'leak': 0.4,
+      'input_scaling':0.1,
+      'nonlinearity':'relu', # 'relu','tanh'
+      'connectivity': 0.6,
+      'noise_level': 0.1,
+      'n_drop': 100,
+      'washout':'init',
+      'use_input_bias':True,
+      'use_input_layer':True,
+      'use_output_bias':True,
+      'use_bias':True,
+      'readout_type': None,
+      'plasticity_synaptic':None,
+      'plasticity_intrinsic':None,
+      'threshold':0.5,
+       'svm_kernel': 'linear',
+      'svm_gamma': 0.005,
+      'svm_C': 5.0,
+      'w_ridge': 5.0,
+      'num_epochs': 2000,
+      'mlp_layout': (10, 10),
+      'w_l2': 0.001,
+      'learning_rate':0.9,
+      'max_depth':12,
+      'n_estimators':100,
+      'min_samples_split':1,
+      'min_samples_leaf':1,
+      'random_state':1,
+      'w_ridge_embedding':1.0,
+      'mts_rep':'reservoir',
+      'bidir': True,
+      'circle': False,
+      'dimred_method': 'tenpca',
+      'n_dim': 44,
+      'plasticity_synaptic':'hebb', # 'hebb'.'oja', 'covariance'
+      'theta_m':0.01,
+      'plasticity_intrinsic':'excitability', # 'excitability', 'activation_function'
+      'new_activation_function':'tanh',
+      'excitability_factor':0.01,
+      'device': 'cpu'
+  }
+  
+# Hiperparámetros del Modelo
+
+
+# Estructura del Proyecto
+
+    MyRCClass.py: Implementación de la clase MyRCClass.
+    fit_evaluate.py: Script para evaluar el rendimiento del modelo.
+    data/: Carpeta con datos de prueba y entrenamiento.
+    notebooks/: Notebooks de Jupyter para experimentos y análisis.
+    README.md: Descripción del proyecto.
+    presentation/: Presentación del proyecto.
+
+# Instalación
+
+Para instalar las dependencias del proyecto, ejecuta:
+      
+      pip install -r requirements.txt
+
+# Uso
+
+Para ejecutar la evaluación, usa el siguiente comando:
+
+# Resultados
+
+Los resultados de las evaluaciones se guardan en la carpeta results/.
+
+# Contacto
+
+Para cualquier consulta, contacta a jogugil@gmail.com/jogugil@alumni.uv.es
+

@@ -35,6 +35,11 @@ pyts
 # Pyunicorn es utilizada para el análisis y modelado de sistemas complejos, incluyendo redes, dinámica no lineal y sistemas caóticos.
 pyunicorn
 
+# Si al instalar este paquete da problemas , entoces deneras descargarlo:
+      # !git clone https://github.com/pik-copan/pyunicorn.git
+      # %cd pyunicorn
+      # !pip install .
+
 # Biblioteca para la optimización evolutiva
 # DEAP es una biblioteca para la implementación de algoritmos de optimización evolutiva, útil para problemas de optimización complejos.
 deap
@@ -72,4 +77,11 @@ torchaudio
 # para proyectar datos de alta dimensión a un espacio de menor dimensión, preservando tanto la estructura local como global. Es comúnmente utilizada en machine
 # learning y visualización de datos para explorar patrones y relaciones en conjuntos de datos complejos.
 umap-learn
+
+# pyunicorn (Python Unified Complex Network and Recurrence Analysis Toolbox) es una biblioteca de Python que proporciona herramientas para la construcción, el análisis y la visualización de redes complejas y sistemas dinámicos. Facilita el análisis de datos multivariantes y series temporales mediante técnicas 
+# avanzadas de teoría de redes y análisis de recurrencia.
+pyunicorn
+
+
+
 

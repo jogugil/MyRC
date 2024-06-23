@@ -1,46 +1,48 @@
-from sklearn.preprocessing import StandardScaler
-from scipy.stats import pearsonr
-from sklearn.metrics import mean_squared_error
-from sklearn.metrics import mean_absolute_error
-#from tslearn.metrics import dtw
-from sklearn.metrics import adjusted_rand_score, silhouette_score, accuracy_score, v_measure_score
-from sklearn.cluster import KMeans
-from sklearn.manifold import TSNE
-from sklearn.decomposition import PCA
-import matplotlib.pyplot as plt
-import numpy as np
-import random
-import matplotlib.pyplot as plt
-from sklearn.manifold import TSNE
-from sklearn.metrics import silhouette_score, homogeneity_score, completeness_score, v_measure_score
-from sklearn.metrics import davies_bouldin_score, calinski_harabasz_score
-from scipy.spatial.distance import pdist, squareform
-
 import os
-import pickle
-
+import mne
+import pywt
+import pickle 
+import random
 import numpy as np
 import pandas as pd
+import seaborn as sns
 import matplotlib.pyplot as plt
- 
-import pywt
 
-import mne
-from mne import io
-from mne.datasets import refmeg_noise
-from mne.viz import plot_alignment
-from mne.preprocessing import ICA
-from mne.preprocessing import regress_artifact
 
 from io import StringIO
 from pathlib import Path
+from nilearn import plotting
 from contextlib import redirect_stdout
 
-from nilearn import plotting
-from scipy.signal import resample
-from scipy.signal import welch
-from sklearn.metrics import homogeneity_score
+from mne import io
+from mne.preprocessing import ICA
+from scipy.signal import coherence
+from mne.viz import plot_alignment
+from mne.datasets import refmeg_noise
+from mne.preprocessing import regress_artifact
 
+from scipy.signal import welch
+from scipy.stats import pearsonr
+from scipy.signal import lfilter
+from scipy.signal import resample
+from scipy.spatial.distance import pdist, squareform
+
+from sklearn.manifold import TSNE
+from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
+from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_absolute_error
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import davies_bouldin_score, calinski_harabasz_score
+from sklearn.metrics import silhouette_score, homogeneity_score, completeness_score, v_measure_score
+from sklearn.metrics import adjusted_rand_score, silhouette_score, accuracy_score, v_measure_score
+    
+ 
+from sklearn.metrics import (confusion_matrix, precision_score, recall_score,
+                             f1_score, roc_auc_score, roc_curve,
+                             classification_report)
+                             
 #########MONTAJE Y ASIGNACION DE CANALES ###########
 
 all_channels = ['Fp1', 'AF7', 'AF3', 'F1', 'F3', 'F5',
@@ -217,54 +219,42 @@ class EEG_Data:
       return [self.all_channels.index(ch) for ch in self.exg_channels]
 
 ######
-  def _assign_channel_type (self, all_channels, eeg_channels, eog_channels, exg_channels, exg_type = "ecg", montage='biosemi64'):
-    self.all_channels = all_channels
-    self.eeg_channels = eeg_channels
-    self.eog_channels = eog_channels
-    self.exg_channels = exg_channels
+  
+  
+        
+  def generate_dataframe(self, electrode_names):
+        """
+        Genera un DataFrame con los datos de los electrodos especificados.
 
-    # Definir los nombres de los canales EEG, EOG y EXG
-    ch_names = all_channels
+        Args:
+            electrode_names (list): Lista de nombres de los electrodos a incluir en el DataFrame.
 
-    # Aquí puedes decidir cómo clasificar los canales EXG (ecg, emg, misc, etc.)
-    ch_types  = ['eeg'] * len(eeg_channels) + ['eog'] * len(eog_channels)
-    exg_type  = exg_type  # Cambiamos 'emg' o 'misc' según lo necesites
-    ch_types += [exg_type] * len(exg_channels) + ['misc']
+        Returns:
+            pd.DataFrame: DataFrame con los datos de los electrodos especificados.
+        """
+        # Verificar si los electrodos especificados están en los canales disponibles
+        available_electrodes = set(self._all_channels)
+        requested_electrodes = set(electrode_names)
+        missing_electrodes = requested_electrodes - available_electrodes
 
-    # Crear un montaje personalizado
-    montage = mne.channels.make_standard_montage(montage)
+        if missing_electrodes:
+            raise ValueError(f"Los siguientes electrodos no están disponibles en los datos: {missing_electrodes}")
 
-    # Obtener los nombres de los electrodos del montaje
-    electrodos_disponibles = montage.ch_names
-    
-    if self._DEBUG: print(f"Electrodos disponibles en el montaje {montage}: {electrodos_disponibles}")
+        # Filtrar los datos crudos para incluir solo los electrodos especificados
+        raw = self.get_raw ()
+        if self.get_fraw () is not None:
+           raw = self.get_fraw()
+        filtered_data = raw.copy().pick_channels(electrode_names)
 
-    raw_m = self.get_raw()
+        # Crear el DataFrame con los datos filtrados
+        data = filtered_data.get_data().T  # Transponer para tener canales como columnas
+        time_points = np.arange(data.shape[0]) / self._sr  # Crear puntos de tiempo basados en la frecuencia de muestreo
 
-    # Crear un objeto Info
-    info = mne.create_info(
-        ch_names=ch_names,  # Lista de nombres de canales
-        ch_types=ch_types,  # Lista de tipos de canales ('eeg', 'eog', 'ecg', etc.)
-        sfreq=512.0
-    )
+        df = pd.DataFrame(data, columns=electrode_names)
+        df['time'] = time_points
 
-    # Asignar el montaje al objeto Info
-    info.set_montage(montage)
-
-    # Obtener los índices de los canales de interés
-    picks = mne.pick_channels(info['ch_names'], include=eeg_channels)
-    if self._DEBUG: print("Índices de los canales seleccionados:", picks)
-    if self._DEBUG: print(f'raw_m.get_montage:{raw_m.get_montage()}')
-    info.set_meas_date(raw_m.info['meas_date'])
-
-    self._info = info
-
-    # Crear un objeto Raw con tus datos brutos
-    raw = mne.io.RawArray(raw_m.get_data(), info)
-    if self._DEBUG: print(raw.info)
-    
-    self.set_raw(raw)
-
+        return data
+ 
   def _assign_channel (self, all_channels, eeg_channels, eog_channels, exg_channels, exg_type = "ecg", montage = 'biosemi64'):
     self.all_channels = all_channels
     self.eeg_channels = eeg_channels
@@ -756,7 +746,6 @@ class EEG_Data:
 
       Parameters:
       channels (list): List of channel names.
-      Returns:
       None
       """
       raw_p = None
@@ -819,9 +808,9 @@ class EEG_Data:
 
   def remove_ica_components_artifact(self):
       """
-      Esta función utiliza ICA para identificar y eliminar automáticamente
-      varios tipos de artefactos de los datos EEG, y muestra el EEG
-      antes y después de la limpieza.
+        Esta función utiliza ICA para identificar y eliminar automáticamente
+        varios tipos de artefactos de los datos EEG, y muestra el EEG
+        antes y después de la limpieza.
       """
       # 1. Copiar los datos raw para preservar los originales
       raw_p = None
@@ -841,7 +830,7 @@ class EEG_Data:
         plt.show()
 
       # 3. Inicializar y ajustar el modelo de ICA a los datos
-      n_components = min(len(self.eeg_channels), 0.999)  # 99.9% de varianza explicada
+      n_components = min (len (self.eeg_channels), 0.999)  # 99.9% de varianza explicada
       ica = mne.preprocessing.ICA(n_components=n_components, method="picard",
                               max_iter="auto", random_state=97)
       ica.fit(raw_c)
@@ -888,14 +877,29 @@ class EEG_Data:
           print("No EMG channel found, skipping EMG artifact detection.")
 
       # Identificar componentes con alta varianza
-      var_thresh     = 3.0  # Umbral de Z-score para considerar alta varianza
+      var_thresh     = 4.0 # Umbral de Z-score para considerar alta varianza
       sources        = ica.get_sources(raw_c).get_data()  # Obtener los datos como array NumPy
       component_vars = np.var(sources, axis=1)  # Calcular la varianza a lo largo del tiempo
       z_scores       = (component_vars - np.mean(component_vars)) / np.std(component_vars)
       high_var_indices = np.where(z_scores > var_thresh)[0]
+      print (high_var_indices)
       if self._DEBUG: print("high_var_indices:", high_var_indices.tolist())
       ica.exclude.extend(high_var_indices.tolist())
+      
+      # Identificar componentes con amplitudes anormalmente altas
+      sources = ica.get_sources(raw_c).get_data()  # Obtener los datos como array NumPy
+      std_dev = np.std(sources, axis=1)  # Desviación estándar de cada componente
+      mean_abs_amplitude = np.mean(np.abs(sources), axis=1)  # Promedio de la amplitud absoluta de cada componente
+        
+      threshold = 2.5  # Ajustar según la distribución de los datos
+      high_amplitude_indices = np.where(mean_abs_amplitude > threshold * std_dev)[0]  # Identificar componentes con amplitudes anormales
+      if self._DEBUG:
+        print("high_amplitude_indices:", high_amplitude_indices.tolist())
+        
+      # Excluir los componentes con amplitudes anormalmente altas
+      ica.exclude.extend(high_amplitude_indices.tolist())
 
+       
       # Eliminar duplicados y ordenar
       ica.exclude = sorted(list(set(ica.exclude)))
 
@@ -988,7 +992,9 @@ class EEG_Data:
     
     def miscellaneous (self):
         raw  = self.get_raw ( )
-
+        if self.get_fraw () is not None:
+            raw = self.get_fraw ()
+        
         time_secs    = raw.times
         n_time_samps = len (time_secs)
         ch_names     = raw.ch_names
@@ -1108,11 +1114,37 @@ def create_dataset (directory, label, count_subj, verbose = True):
     eeg ['label'] = label
     return eeg
 def flatten_representations(internal_representations):
+    """
+        Aplana las representaciones internas en una sola dimensión por sujeto.
+    
+        Parámetros:
+        internal_representations (ndarray): Tensor de representaciones internas con forma (num_subjects, num_samples, num_neurons).
+    
+        Retorna:
+        flattened_representations (ndarray): Array 2D con las representaciones aplanadas, de forma (num_subjects, num_samples * num_neurons).
+    
+        Descripción:
+        - Convierte las representaciones 3D (sujetos, muestras, neuronas) en una forma 2D más manejable.
+        - Cada sujeto tendrá todas sus muestras concatenadas en una única dimensión.
+    """
     num_subjects, num_samples, num_neurons = internal_representations.shape
     flattened_representations = internal_representations.reshape (num_subjects, num_samples * num_neurons)
     return flattened_representations
 
 def extract_features(internal_representations):
+    """
+        Extrae la media y la varianza de las activaciones neuronales para cada sujeto.
+    
+        Parámetros:
+        internal_representations (ndarray): Tensor de representaciones internas con forma (num_subjects, num_samples, num_neurons).
+    
+        Retorna:
+        features (ndarray): Array 2D con las características extraídas (media y varianza) para cada sujeto, de forma (num_subjects, num_neurons * 2).
+    
+        Descripción:
+        - Calcula la media y la varianza de las activaciones de cada neurona a lo largo de las muestras.
+        - Almacena las características en un array donde la primera mitad son las medias y la segunda mitad las varianzas.
+    """
     num_subjects, num_samples, num_neurons = internal_representations.shape
     features = np.zeros((num_subjects, num_neurons * 2))  # Media y varianza para cada neurona
 
@@ -1124,9 +1156,26 @@ def extract_features(internal_representations):
         features[i, num_neurons:] = var_features
 
     return features
-##CARGAMOS LOS DATOS
+ 
 def load_data (direct_Younger = "./Younger",direct_Older = './Older', n_y_subject = 12, n_o_subject = 12, verbose = True):
-    # ## 1. Cargamos los datos
+    """
+        Carga los datos de EEG de sujetos jóvenes y mayores desde los directorios especificados.
+    
+        Parámetros:
+        direct_Younger (str): Directorio que contiene los datos de los sujetos jóvenes.
+        direct_Older (str): Directorio que contiene los datos de los sujetos mayores.
+        n_y_subject (int): Número de sujetos jóvenes a cargar.
+        n_o_subject (int): Número de sujetos mayores a cargar.
+        verbose (bool): Si es True, imprime mensajes de progreso.
+    
+        Retorna:
+        dataset_Younger (DataFrame): Conjunto de datos de los sujetos jóvenes.
+        dataset_Older (DataFrame): Conjunto de datos de los sujetos mayores.
+    
+        Descripción:
+        - Utiliza la función `create_dataset` para cargar los datos.
+        - Imprime mensajes de progreso si `verbose` es True.
+    """
     if verbose:
         print ("Cargamos dataset Younger")
     dataset_Younger = create_dataset (direct_Younger, label = 'Younger', count_subj = n_y_subject, verbose = verbose)
@@ -1135,25 +1184,70 @@ def load_data (direct_Younger = "./Younger",direct_Older = './Older', n_y_subjec
     dataset_Older   = create_dataset (direct_Older, label = 'Older', count_subj = n_o_subject, verbose = verbose)
 
     return dataset_Younger, dataset_Older
-## Preprocesado señales EEG:
-### Creamos los dataset young/old con su EEG completo
-def assing_channels_dt (dt_subject, all_channels, eeg_channels, eog_channels, exg_channels):
-  n_subjt = dt_subject.shape [0]
+ 
+def assing_channels_dt (dt_subject, all_channels, eeg_channels, eog_channels, exg_channels,exg_type = 'emg'):
+    """
+        Asigna los nombres de los canales a los datos EEG de cada sujeto en el DataFrame.
+    
+        Parámetros:
+        dt_subject (DataFrame): Conjunto de datos de los sujetos.
+        all_channels (list): Lista completa de nombres de canales.
+        eeg_channels (list): Lista de nombres de canales EEG.
+        eog_channels (list): Lista de nombres de canales EOG.
+        exg_channels (list): Lista de nombres de canales EXG.
+        exg_type (str): Tipo de canal EXG, por defecto 'emg'.
+    
+        Retorna:
+        None
+    
+        Descripción:
+        - Recorre cada sujeto en el DataFrame y asigna los nombres de los canales especificados.
+        - Utiliza el método `assign_channel_names` de los datos EEG.
+    """
+    n_subjt = dt_subject.shape [0]
 
-  for i in range (n_subjt):
-      dt_subject.iloc [i] ['EEG'].assign_channel_names (all_channels, eeg_channels, eog_channels, exg_channels, exg_type = 'ecg')
+    for i in range (n_subjt):
+        dt_subject.iloc [i] ['EEG'].assign_channel_names (all_channels, eeg_channels, eog_channels, exg_channels, exg_type = exg_type)
 
 def filtering_dt (dt_subject,cut_low = 16, n_decim = 2):
-  n_subjt = dt_subject.shape [0]
+    """
+        Filtra y remuestrea los datos EEG de cada sujeto en el DataFrame.
+    
+        Parámetros:
+        dt_subject (DataFrame): Conjunto de datos de los sujetos.
+        cut_low (int): Frecuencia de corte baja para el filtro.
+        n_decim (int): Factor de decimación para remuestrear los datos.
+    
+        Retorna:
+        None
+    
+        Descripción:
+        - Aplica un filtro de frecuencia a los datos EEG de cada sujeto.
+        - Remuestrea los datos utilizando un factor de decimación.
+    """
+    n_subjt = dt_subject.shape [0]
 
-  for i in range (n_subjt):
-      dt_subject.iloc [i] ['EEG'].channel_filtered (cut_low = 16)
-      dt_subject.iloc [i] ['EEG'].resample_mne (n_decim = n_decim)
+    for i in range (n_subjt):
+        dt_subject.iloc [i] ['EEG'].channel_filtered (cut_low = 16)
+        dt_subject.iloc [i] ['EEG'].resample_mne (n_decim = n_decim)
 
 def ica_artifact (dt_subject):
-  n_subjt_y = dt_subject.shape [0] # 4
-  for i in range (n_subjt_y):
-    dt_subject.iloc [i] ['EEG'].remove_ica_components_artifact ()
+    """
+        Aplica la eliminación de artefactos en los datos EEG usando Análisis de Componentes Independientes (ICA).
+    
+        Parámetros:
+        dt_subject (DataFrame): Conjunto de datos de los sujetos.
+    
+        Retorna:
+        None
+    
+        Descripción:
+        - Utiliza ICA para identificar y eliminar componentes de artefactos en los datos EEG.
+        - Procesa los datos EEG de cada sujeto en el DataFrame.
+    """
+    n_subjt_y = dt_subject.shape [0] # 4
+    for i in range (n_subjt_y):
+        dt_subject.iloc [i] ['EEG'].remove_ica_components_artifact ()
 
 
 def create_3d_matrix (dataset, num_subjects,  
@@ -1199,3 +1293,345 @@ def create_3d_matrix (dataset, num_subjects,
       data_matrix [i, :, :] = eeg_data [i].get_data () [:,:min_dt]
 
     return data_matrix
+    
+def generate_ar_process(coeffs, n_samples):
+    """
+    Generate an autoregressive (AR) process.
+    :param coeffs: Coefficients of the AR process.
+    :param n_samples: Number of samples to generate.
+    :return: Generated AR process.
+    """
+    noise = np.random.normal(size=n_samples)
+    return lfilter([1], np.concatenate(([1], [-c for c in coeffs])), noise)
+
+def generate_gaussian_process(mean, cov, n_samples):
+    """
+    Generate a Gaussian process.
+    :param mean: Mean of the process.
+    :param cov: Covariance matrix of the process.
+    :param n_samples: Number of samples to generate.
+    :return: Generated Gaussian process.
+    """
+    return np.random.multivariate_normal(mean, cov, n_samples).T
+
+def generate_synthetic_eeg_data(n_subjects_per_group, n_samples_per_subject, n_channels, sr):
+    """
+        Genera datos sintéticos de EEG para dos grupos distintos de sujetos (jóvenes y mayores), incluyendo 
+        diversas bandas de frecuencia y características específicas para cada grupo.
+    
+        Parámetros:
+        n_subjects_per_group (int): Número de sujetos en cada grupo (jóvenes y mayores).
+        n_samples_per_subject (int): Número de muestras de EEG por sujeto.
+        n_channels (int): Número de canales de EEG.
+        sr (int): Frecuencia de muestreo (Hz).
+    
+        Retorna:
+        data (ndarray): Matriz con datos sintéticos de EEG de tamaño 
+                        (2 * n_subjects_per_group, n_samples_per_subject, n_channels).
+        labels (ndarray): Matriz con etiquetas one-hot de tamaño (2 * n_subjects_per_group, 2).
+    
+        Descripción:
+        - Cada grupo tiene un conjunto específico de características de señal EEG.
+        - Se simulan cinco bandas de frecuencia: Delta, Theta, Alpha, Beta, y Gamma.
+        - Los sujetos jóvenes tienen un pico de amplitud en la banda Beta.
+        - Los sujetos mayores tienen señales de menor amplitud y más ruido.
+        - Se añade un proceso autoregresivo y un proceso gaussiano para mayor realismo.
+        - Se añade ruido gaussiano a las señales generadas.
+    """
+    bandas_frecuencia = {
+        'Delta': (0.5, 4),
+        'Theta': (4, 8),
+        'Alpha': (8, 13),
+        'Beta': (13, 30),
+        'Gamma': (30, 100)
+    }
+
+    data = np.zeros((2 * n_subjects_per_group, n_samples_per_subject, n_channels))
+    labels = np.zeros((2 * n_subjects_per_group, 2))  # Etiquetas one-hot
+
+    for group in range(2):
+        np.random.seed(group)  # Establecer una semilla única para cada grupo
+
+        for subj in range(n_subjects_per_group):
+            for channel in range(n_channels):
+                signal = np.zeros(n_samples_per_subject)
+                for band_name, (low_freq, high_freq) in bandas_frecuencia.items():
+                    if group == 0:  # Sujetos jóvenes
+                        if band_name == 'Beta':
+                            # Agregar pico de amplitud en la banda Beta para el grupo 0
+                            amplitude = np.random.uniform (5, 7)
+                            frequency = np.random.uniform (20, 25)
+                            phase = np.random.uniform (0, 2*np.pi)
+                            peak_signal = amplitude * np.sin (2 * np.pi * frequency * np.arange (n_samples_per_subject) / sr + phase)
+                            signal += peak_signal
+                        else:
+                            frequency = np.random.uniform (low_freq, high_freq)
+                            amplitude = np.random.uniform (2, 5)
+                            phase = np.random.uniform (0, 2*np.pi)
+                            band_signal = amplitude * np.sin(2 * np.pi * frequency * np.arange(n_samples_per_subject) + phase)
+                            signal += band_signal
+                    else:  # Sujetos mayores
+                        amplitude = np.random.uniform (0.5, 1.5)
+                        frequency = np.random.uniform (low_freq, high_freq)
+                        phase = np.random.uniform (0, 2*np.pi)
+                        band_signal = amplitude * np.sin (2 * np.pi * frequency * np.arange (n_samples_per_subject) / sr + phase)
+                        band_signal += np.random.normal (loc = 0, scale = 0.8, size = n_samples_per_subject)
+                        signal += band_signal
+
+                # Adición de un proceso autoregresivo
+                ar_coeffs  = [0.75, -0.25]
+                ar_process = generate_ar_process (ar_coeffs, n_samples_per_subject)
+                signal += ar_process
+
+                # Adición de un proceso de Gauss
+                mean = np.zeros (n_samples_per_subject)
+                cov  = np.eye(n_samples_per_subject) * 0.5
+                gaussian_process = generate_gaussian_process (mean, cov, n_samples_per_subject)
+                signal += gaussian_process [channel % n_samples_per_subject]
+
+                # Agregar ruido gaussiano
+                noise = np.random.normal (loc = 0, scale = 0.5, size = n_samples_per_subject)
+                data [group * n_subjects_per_group + subj, :, channel] = signal + noise
+                labels [group * n_subjects_per_group + subj, group] = 1  # Asignar etiqueta one-hot de grupo
+
+    return data, labels
+
+def generate_groups_synthetic_data_with_bands  (n_subjects_per_group, n_samples_per_subject, n_channels, sr):
+    """
+        Genera datos sintéticos de EEG para dos grupos distintos de sujetos (jóvenes y mayores), incluyendo 
+        diversas bandas de frecuencia y características específicas para cada grupo.
+    
+        Parámetros:
+        n_subjects_per_group (int): Número de sujetos en cada grupo (jóvenes y mayores).
+        n_samples_per_subject (int): Número de muestras de EEG por sujeto.
+        n_channels (int): Número de canales de EEG.
+        sr (int): Frecuencia de muestreo (Hz).
+    
+        Retorna:
+        data (ndarray): Matriz con datos sintéticos de EEG de tamaño 
+                        (2 * n_subjects_per_group, n_samples_per_subject, n_channels).
+        labels (ndarray): Matriz con etiquetas one-hot de tamaño (2 * n_subjects_per_group, 2).
+    
+        Descripción:
+        - Cada grupo tiene un conjunto específico de características de señal EEG.
+        - Se simulan cinco bandas de frecuencia: Delta, Theta, Alpha, Beta, y Gamma.
+        - Los sujetos jóvenes tienen un pico de amplitud en la banda Beta.
+        - Los sujetos mayores tienen señales de menor amplitud y más ruido.
+        - Se añade ruido gaussiano a las señales generadas.
+    """
+    bandas_frecuencia = {
+        'Delta': (0.5, 4),
+        'Theta': (4, 8),
+        'Alpha': (8, 13),
+        'Beta': (13, 30),
+        'Gamma': (30, 100)
+    }
+
+    # Generar señales sinusoidales con ruido para EEG
+    data = np.zeros((2 * n_subjects_per_group, n_samples_per_subject, n_channels))
+    labels = np.zeros((2 * n_subjects_per_group, 2))  # Etiquetas one-hot
+
+    for group in range(2):
+        for subj in range(n_subjects_per_group):
+            for channel in range(n_channels):
+                signal = np.zeros(n_samples_per_subject)
+                for band_name, (low_freq, high_freq) in bandas_frecuencia.items():
+                    # Generar señal sinusoidal para la banda de frecuencia actual
+                    if group == 0:  # Sujetos jóvenes
+                        if band_name == 'Beta':
+                            # Agregar pico de amplitud en la banda Beta para el grupo 0
+                            amplitude = np.random.uniform(5, 7)  # Amplitud del pico
+                            frequency = np.random.uniform(20, 25)  # Frecuencia del pico en Beta
+                            phase = np.random.uniform(0, 2*np.pi)  # Fase aleatoria
+                            peak_signal = amplitude * np.sin(2 * np.pi * frequency * np.arange(n_samples_per_subject) / sr + phase)
+                            signal += peak_signal
+                        else:
+                            # Aumentar similitud entre las señales de los sujetos del grupo 0
+                            amplitude = np.random.uniform(2, 3)  # Amplitud aleatoria mayor
+                            frequency = np.random.uniform(low_freq, high_freq)  # Frecuencia aleatoria dentro de la banda
+                            phase = np.random.uniform(0, 2*np.pi)  # Fase aleatoria
+                            # Usar la misma semilla para todos los sujetos del grupo 0
+                            np.random.seed(0)
+                            band_signal = amplitude * np.sin(2 * np.pi * frequency * np.arange(n_samples_per_subject) / sr + phase)
+                            signal += band_signal
+                    else:  # Sujetos mayores
+                        # Introducir patrones de señales distintivos para el grupo 1
+                        amplitude = np.random.uniform(0.5, 1.5)  # Amplitud aleatoria menor
+                        frequency = np.random.uniform(low_freq, high_freq)  # Frecuencia aleatoria dentro de la banda
+                        phase = np.random.uniform(0, 2*np.pi)  # Fase aleatoria
+                        band_signal = amplitude * np.sin(2 * np.pi * frequency * np.arange(n_samples_per_subject) / sr + phase)
+                        signal += band_signal
+                # Agregar ruido gaussiano
+                noise = np.random.normal(loc=0, scale=0.4, size=n_samples_per_subject)
+                data[group * n_subjects_per_group + subj, :, channel] = signal + noise
+                labels[group * n_subjects_per_group + subj, group] = 1  # Asignar etiqueta one-hot de grupo
+
+    return data, labels
+
+def plot_eeg_signals (subject, data_matrix):
+    """
+    Función para dibujar las señales EEG de un sujeto específico.
+
+    Argumentos:
+    subject : int
+        Número del sujeto del cual se dibujarán las señales EEG.
+    data_matrix : numpy.ndarray
+        Matriz tridimensional de datos EEG con dimensiones [N, V, T],
+        donde N es el número de sujetos, V es el número de muestras y T es el número de canales.
+    """
+    # Obtener las señales EEG del sujeto especificado
+    eeg_signals = data_matrix[subject]
+
+    # Número de canales (T)
+    num_channels = eeg_signals.shape[1]
+
+    # Crear una figura con subgráficos para cada canal
+    fig, axes = plt.subplots(num_channels, 1, figsize=(10, 5*num_channels), sharex=True)
+
+    # Iterar sobre cada canal y dibujar la señal correspondiente
+    for i in range(num_channels):
+        axes[i].plot(eeg_signals[:60, i])
+        axes[i].set_ylabel(f'Canal {i+1}')
+
+    # Establecer etiqueta en el eje x para el último subgráfico
+    axes[num_channels-1].set_xlabel('Muestras')
+
+    # Título de la figura
+    fig.suptitle(f'Señales EEG del Sujeto {subject}', fontsize=16)
+
+    # Ajustar el espaciado entre subgráficos
+    plt.tight_layout()
+
+    # Mostrar la figura
+    plt.show()
+
+
+def create_coherence_original_vs_reconstructed(eeg_o, eeg_r, fs=512, nperseg=256, banda=None):
+    """
+        Calcula y grafica la coherencia entre las señales EEG originales y las reconstruidas canal por canal.
+    
+        Args:
+        - eeg_o (numpy array): EEG original con dimensiones (n_channels, n_samples).
+        - eeg_r (numpy array): EEG reconstruido con dimensiones (n_channels, n_samples).
+        - fs (int, optional): Frecuencia de muestreo de las señales EEG. Por defecto es 512 Hz.
+        - nperseg (int, optional): Longitud de cada segmento de señal para el cálculo de la coherencia. Por defecto es 256.
+        - banda (tuple, optional): Banda de frecuencia específica para filtrar la coherencia. Debe ser un tuple de dos valores (frecuencia mínima, frecuencia máxima). Por defecto es None.
+    
+        Returns:
+        - cohe (list): Lista con los valores promedio de coherencia por canal.
+        - cohe_band (list): Lista con los valores promedio de coherencia por banda y canal.
+    """
+    n_channels = eeg_o.shape[0]
+    print(f'eeg_o: {eeg_o.shape}')
+    print(f'eeg_r: {eeg_r.shape}')
+    cohe_band = []
+    cohe      = []
+    for i in range(n_channels):
+        f, Cxy = coherence(eeg_o[i, :], eeg_r[i, :], fs=fs, nperseg=nperseg)
+        if banda:
+            # Filtrar coherencia en la banda de frecuencia específica
+            idx_band = np.where((f >= banda[0]) & (f <= banda[1]))
+            Cxy_band = Cxy[idx_band]
+            cohe_band.append(np.mean(Cxy_band))
+            cohe.append(np.mean(Cxy)) 
+        else:
+            cohe.append(np.mean(Cxy))  # Promedio de coherencia en todas las frecuencias
+
+        print(f"Cxy average for channel {i}: {np.mean(Cxy)}")
+        print(f"Cxy shape: {Cxy.shape}")
+        print(f"f shape: {f.shape}")
+
+        # Graficar la coherencia
+        plt.figure()
+        plt.semilogy(f, Cxy)
+        plt.xlabel('Frequency [Hz]')
+        plt.ylabel('Coherence')
+        plt.title(f'Coherence Channel {i} - {np.mean(Cxy)}')
+        plt.show()
+
+    return cohe, cohe_band  
+    
+def create_coherence_matrix(eeg_o, eeg_r, fs=512, nperseg=256):
+    """
+        Calcula la matriz de coherencia entre las señales EEG originales y reconstruidas canal por canal.
+    
+        Args:
+        - eeg_o (numpy array): EEG original con dimensiones (n_channels, n_samples).
+        - eeg_r (numpy array): EEG reconstruido con dimensiones (n_channels, n_samples).
+        - fs (int, optional): Frecuencia de muestreo de las señales EEG. Por defecto es 512 Hz.
+        - nperseg (int, optional): Longitud de cada segmento de señal para el cálculo de la coherencia. Por defecto es 256.
+    
+        Returns:
+        - coherence_matrix (numpy array): Matriz de coherencia con dimensiones (n_channels, n_channels).
+          Cada elemento [i, j] representa la coherencia promedio entre el canal i de eeg_o y el canal j de eeg_r.
+    """
+    n_channels = eeg_o.shape[0]
+    coherence_matrix = np.zeros((n_channels, n_channels))
+
+    for i in range(n_channels):
+        for j in range(n_channels):
+            f, Cxy = coherence(eeg_o[i, :], eeg_r[j, :], fs=fs, nperseg=nperseg)
+            # Aquí se podría promediar en una banda de frecuencias específica
+            coherence_matrix[i, j] = np.mean(Cxy)  # Promedio sobre todas las frecuencias
+    return coherence_matrix
+    
+
+
+def evaluate_clustering(labels, labels_pred):
+    """
+    Calcula y muestra varias métricas de evaluación para el clustering, incluyendo la matriz de confusión,
+    frecuencia, precisión, recall, F1 score, ROC AUC score y la curva ROC. También muestra el reporte de clasificación.
+
+    Args:
+    labels (array-like): Etiquetas reales.
+    labels_pred (array-like): Etiquetas predichas por el modelo de clustering.
+    """
+
+    # Calcular la matriz de confusión
+    cm = confusion_matrix(labels, labels_pred)
+    print("Confusion Matrix:")
+    print(cm)
+
+    # Graficar la matriz de confusión
+    plt.figure(figsize=(10, 7))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False, xticklabels=np.unique(labels), yticklabels=np.unique(labels))
+    plt.xlabel('Predicted')
+    plt.ylabel('Actual')
+    plt.title('Confusion Matrix')
+    plt.show()
+
+    # Calcular frecuencia y precisión
+    fq = np.sum(cm, axis=0) / np.sum(cm)
+    accuracy = np.trace(cm) / np.sum(cm)
+    print("Frequency:", fq)
+    print("Accuracy:", accuracy)
+
+    # Calcular otras métricas
+    precision = precision_score(labels, labels_pred, average='weighted')
+    recall = recall_score(labels, labels_pred, average='weighted')
+    f1 = f1_score(labels, labels_pred, average='weighted')
+    roc_auc = roc_auc_score(labels, labels_pred)
+    print("Precision:", precision)
+    print("Recall:", recall)
+    print("F1 Score:", f1)
+    print("ROC AUC Score:", roc_auc)
+
+    # Calcular la curva ROC
+    fpr, tpr, _ = roc_curve(labels, labels_pred)
+
+    # Graficar la curva ROC
+    plt.figure()
+    plt.plot(fpr, tpr, color='blue', lw=2, label=f'ROC curve (area = {roc_auc:.2f})')
+    plt.plot([0, 1], [0, 1], color='gray', lw=2, linestyle='--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver Operating Characteristic')
+    plt.legend(loc="lower right")
+    plt.show()
+
+    # Reporte de clasificación
+    report = classification_report(labels, labels_pred)
+    print("Classification Report:")
+    print(report)

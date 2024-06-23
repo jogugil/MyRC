@@ -2,30 +2,37 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.init as init
-
+ 
 import re
 import os
 import time
 import random
 import numpy as np
+import seaborn as sns
 import networkx as nx
 import matplotlib.pyplot as plt
+
+from base.tensorPCA import tensorPCA
+
+from scipy.stats import pearsonr
+from scipy.spatial.distance import cdist
+from scipy.spatial.distance import pdist, cdist, squareform
 
 from sklearn.svm import SVC
 from scipy.io import loadmat 
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 from sklearn.linear_model import Ridge
-from scipy.spatial.distance import cdist
-from sklearn.multiclass import OneVsRestClassifier
+from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_absolute_error
 from sklearn.neural_network import MLPClassifier
+from sklearn.preprocessing import StandardScaler
+from sklearn.multiclass import OneVsRestClassifier
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.metrics import multilabel_confusion_matrix
- 
-from scipy.spatial.distance import pdist, cdist, squareform
-
-from base.tensorPCA import tensorPCA
-
+from sklearn.metrics import (confusion_matrix, roc_curve, roc_auc_score,
+                             precision_score, recall_score, f1_score,
+                             accuracy_score, classification_report)
 '''
 ### **Valores de configuración del Recervoir:**
 
@@ -233,7 +240,6 @@ class MyESN (nn.Module):
         self.nonlinearity            = config ['nonlinearity']
         self.use_input_bias          = config ['use_input_bias']
         self.use_input_layer         = config ['use_input_layer']
-        self.use_output_bias         = config ['use_output_bias']
         self.reservoir_size          = config ['n_internal_units']
         self.spectral_radius         = config ['spectral_radius']
         self.input_scaling           = config ['input_scaling']
@@ -287,24 +293,40 @@ class MyESN (nn.Module):
     def forward (self, input_data, reservoir_state, t):
         ''' 
             Método forward que calcula el estado del reservorio en el instante t basado en la entrada y el estado previo.
-            Se transforma la entrada mediante una capa lineal inicial o una multiplicación con los pesos de entrada,
-            dependiendo de si se ha habilitado la capa de entrada lineal.
             
-            Se obtiene el estado anterior del reservorio correspondiente al instante t-1.
+            Funcionalidad:
             
-            Si t > 0, se toma como estado anterior el estado del reservorio en el instante anterior.
+            1. Transforma la entrada:
+               - Si se ha habilitado una capa de entrada lineal, se aplica esta transformación inicial.
+               - En caso contrario, se multiplica la entrada por los pesos de entrada.
+        
+            2. Obtiene el estado previo del reservorio:
+               - Si t > 0, se toma el estado del reservorio en el instante anterior (t-1).
+               - Si t == 0, se inicializa como un tensor de ceros.
+        
+            3. Calcula la representación interna del reservorio:
+               - Multiplica el estado anterior por los pesos del reservorio, permitiendo la propagación de la información a través del mismo.
+               - Suma la representación transformada por la entrada.
+               - Añade ruido a la señal para introducir aleatoriedad.
+        
+            4. Aplica la no linealidad:
+               - Utiliza la función tangente hiperbólica para generar la salida no lineal del reservorio.
+        
+            5. Aplica la plasticidad sináptica e intrínseca si están habilitadas:
+               - La plasticidad sináptica ajusta los pesos de las sinapsis.
+               - La plasticidad intrínseca ajusta los nodos del reservorio.
+        
+            6. Actualiza el estado del reservorio:
+               - Interpola entre el estado anterior y la representación transformada por la entrada usando la tasa de fuga.
+               - Almacena el estado actualizado del reservorio en el instante t.
+        
+            Parámetros:
+            - input_data: Tensor con los datos de entrada.
+            - reservoir_state: Tensor con el estado del reservorio.
+            - t: Instante de tiempo actual.
             
-            En caso contrario, se inicializa como un tensor de ceros.
-            
-            Se calcula la representación interna del reservorio multiplicando el estado anterior por los pesos del reservorio.
-            
-            Luego, se suma la representación transformada por la entrada y se añade ruido para introducir aleatoriedad.
-            A continuación, se aplica la función de no linealidad (tangente hiperbólica) para generar la salida del reservorio.
-            Si se ha habilitado la plasticidad sináptica, se aplica para ajustar los pesos de los sinapsis.
-            Si se ha habilitado la plasticidad intrínseca, se aplica para ajustar los nodos del reservorio.
-            Finalmente, se actualiza el estado del reservorio en el instante t, interpolando entre el estado anterior
-            y la representación transformada por la entrada, con la tasa de fuga como factor de interpolación.
-            El estado actualizado del reservorio se devuelve como salida del método.
+            Retorno:
+            - El estado actualizado del reservorio.
         '''
         
         # print(f'input_data:{input_data.shape}')
@@ -357,6 +379,20 @@ class MyESN (nn.Module):
         return reservoir_state
 
     def _f_nonlinearity(self, rc_data):
+        '''
+            Aplica una función de no linealidad a los datos del reservorio según la configuración.
+            
+            Funcionalidad:
+            
+            - Si se ha definido `new_activations`, aplica esta función a `rc_data`.
+            - Si no, aplica la función de no linealidad especificada (`tanh`, `relu` o `id`) a `rc_data`.
+            
+            Parámetros:
+            - rc_data: Tensor de datos del reservorio a los que aplicar la no linealidad.
+            
+            Retorno:
+            - Tensor con los datos del reservorio transformados según la función de no linealidad.
+        '''
         if self.new_activations is not None:
             rc_data_nonlinearity = self.new_activations(rc_data)
         else:
@@ -372,6 +408,19 @@ class MyESN (nn.Module):
         return rc_data_nonlinearity
         
     def _apply_intrinsic_plasticity (self, reservoir_state, t):
+        '''
+            Aplica reglas de plasticidad intrínseca al estado del reservorio en el instante t.
+            
+            Funcionalidad:
+            
+            - Si la plasticidad intrínseca es 'excitability', ajusta la excitabilidad de las neuronas multiplicando por `excitability_factor`.
+            - Si la plasticidad intrínseca es 'activation_function', cambia la función de activación del reservorio según `new_activation_function`.
+            
+            Parámetros:
+            - reservoir_state: Tensor con el estado del reservorio.
+            - t: Instante de tiempo actual.
+        '''        
+        
         # Implementación de la plasticidad intrínseca
         if self.plasticity_intrinsic == 'excitability':
             # Modifica la excitabilidad de las neuronas en el reservorio
@@ -391,6 +440,20 @@ class MyESN (nn.Module):
             raise ValueError("Invalid intrinsic plasticity rule. Only 'excitability' or 'activation_function' ")
 
     def _apply_synaptic_plasticity (self, input_data, reservoir_state, t):
+        '''
+            Aplica reglas de plasticidad sináptica al estado del reservorio en el instante t.
+            
+            Funcionalidad:
+            
+            - Si la plasticidad sináptica es 'hebb', aplica la regla de Hebb.
+            - Si la plasticidad sináptica es 'covariance', calcula y actualiza los pesos según la regla de Covarianza.
+            - Si la plasticidad sináptica es 'oja', aplica la regla de Oja para ajustar los pesos.
+            
+            Parámetros:
+            - input_data: Tensor con los datos de entrada.
+            - reservoir_state: Tensor con el estado del reservorio.
+            - t: Instante de tiempo actual.
+        '''
         # Implementación de la plasticidad sináptica
         if self.plasticity_synaptic is not None:
             if self.plasticity_synaptic == 'hebb':
@@ -412,6 +475,19 @@ class MyESN (nn.Module):
                 raise ValueError("Invalid synaptic plasticity rule.") 
 
     def _apply_ojas_rule (self, reservoir_state, input_data, t):
+        '''
+            Aplica la regla de Oja para ajustar los pesos sinápticos del reservorio en el instante t.
+            
+            Funcionalidad:
+            
+            - Calcula la activación de las neuronas en el reservorio y la proyección de la entrada.
+            - Utiliza la diferencia entre la entrada y la proyección para ajustar los pesos según la regla de Oja.
+            
+            Parámetros:
+            - reservoir_state: Tensor con el estado del reservorio.
+            - input_data: Tensor con los datos de entrada.
+            - t: Instante de tiempo actual.
+        '''
         # Obtener el estado actual del reservorio en el tiempo t
         reservoir_state_t = reservoir_state [:, t, :]  # Dimensiones: (batch_size, reservoir_size)
     
@@ -431,6 +507,18 @@ class MyESN (nn.Module):
         self.reservoir_weights += delta_weights.to (self.device)
 
     def _apply_bcm_rule (self, reservoir_state, t):
+        '''
+            Aplica la regla de BCM para ajustar los pesos sinápticos del reservorio en el instante t.
+            
+            Funcionalidad:
+            
+            - Calcula la activación promedio de las neuronas en el reservorio.
+            - Ajusta los pesos según la regla de BCM utilizando la activación promedio y el umbral de modificación.
+            
+            Parámetros:
+            - reservoir_state: Tensor con el estado del reservorio.
+            - t: Instante de tiempo actual.
+        '''
         # Obtener el estado actual del reservorio en el tiempo t
         reservoir_state_t = reservoir_state [:, t, :]
 
@@ -448,7 +536,21 @@ class MyESN (nn.Module):
 
 
     def _spectral_reservoir_weights_circ (self, n_internal_units, spectral_radius):
-
+        '''
+            Construye una matriz de pesos del reservorio con topología circular y ajusta el radio espectral.
+            
+            Funcionalidad:
+            
+            - Construye una matriz de pesos del reservorio con topología circular.
+            - Ajusta el radio espectral de la matriz de pesos del reservorio.
+            
+            Parámetros:
+            - n_internal_units: Número de unidades internas en el reservorio.
+            - spectral_radius: Radio espectral deseado para la matriz de pesos del reservorio.
+            
+            Retorno:
+            - Tensor con la matriz de pesos del reservorio ajustada.
+        '''
         # Construct reservoir with circular topology
         reservoir_weights = np.zeros((n_internal_units, n_internal_units))
         reservoir_weights [0,-1] = 1.0
@@ -463,23 +565,55 @@ class MyESN (nn.Module):
 
         
     def _spectral_reservoir_weights (self):
-        print (f'reservoir_weights 0:{self.reservoir_weights.device}')
+        '''
+            Ajusta el radio espectral de la matriz de pesos del reservorio y aplica conectividad esparsa.
+            
+            Funcionalidad:
+            
+            - Ajusta el radio espectral de la matriz de pesos del reservorio.
+            - Aplica una máscara de conectividad esparsa basada en el parámetro `connectivity`.
+            
+            Retorno:
+            - Tensor con la matriz de pesos del reservorio ajustada y con conectividad esparsa.
+        '''
+        # print (f'reservoir_weights 0:{self.reservoir_weights.device}')
         self.reservoir_weights = self.reservoir_weights.to(self.device)
-        print (f'reservoir_weights 1:{self.reservoir_weights.device}')
+        # print (f'reservoir_weights 1:{self.reservoir_weights.device}')
         if not isinstance (self.reservoir_weights, torch.Tensor):
             self.reservoir_weights = torch.tensor (self.reservoir_weights, dtype = torch.float32).to (self.device)
-        print (f'reservoir_weights 2:{self.reservoir_weights.device}')
+        # print (f'reservoir_weights 2:{self.reservoir_weights.device}')
         self.reservoir_weights *= self.spectral_radius / torch.max (torch.abs (torch.linalg.eigvals (self.reservoir_weights)))
-        print (f'reservoir_weights 3:{self.reservoir_weights.device}')
+        # print (f'reservoir_weights 3:{self.reservoir_weights.device}')
         mask = torch.rand (self.reservoir_size, self.reservoir_size).float()  < self.connectivity
-        print (f'mask 0:{mask.device}')
-        print (f'reservoir_weights 4:{self.reservoir_weights.device}')
+        # print (f'mask 0:{mask.device}')
+        # print (f'reservoir_weights 4:{self.reservoir_weights.device}')
         mask = mask.to(self.device) # Move mask to the same device
-        print (f'mask 1:{mask.device}')
+        # print (f'mask 1:{mask.device}')
         self.reservoir_weights *= mask 
         return self.reservoir_weights
         
     def _initialize_weights (self):
+        '''
+            Inicializa los pesos de entrada y del reservorio según el tipo de inicialización especificado.
+            
+            Funcionalidad:
+            
+                - Inicializa los pesos de entrada (`input_weights`) y del reservorio (`reservoir_weights`).
+                - Permite la inicialización aleatoria uniforme, ortogonal, truncada normal o binomial.
+                
+                Tipos de inicialización:
+                
+                - 'rand': Inicialización aleatoria uniforme. Los pesos se generan aleatoriamente entre -0.5 y 0.5 y se escalan por `input_scaling`.
+                
+                - 'orthogonal': Inicialización ortogonal. Los pesos se inicializan con una matriz ortogonal generada por PyTorch y se escalan por 0.5 y `input_scaling`.
+                
+                - 'trunc_normal': Inicialización truncada normal. Los pesos se generan aleatoriamente a partir de una distribución normal truncada con media `init_mean`, desviación estándar `init_std`, y luego se escalan por `input_scaling`.
+                
+                - 'binorm': Inicialización binomial. Los pesos se generan utilizando una distribución binomial centrada en 0 y 1, luego se escalan entre -1.0 y 1.0 por `input_scaling`.
+                
+                Raises:
+                    ValueError: Si el tipo de inicialización especificado no es válido (no es 'rand', 'orthogonal', 'trunc_normal' o 'binorm').
+        '''
         # Define las matrices de pesos para la entrada y del reservorio
         # Inicialización de los pesos de entrada
         if self.init_type == 'rand':
@@ -501,6 +635,9 @@ class MyESN (nn.Module):
             raise ValueError("Invalid initialization type. Use 'rand', 'orthogonal', or 'trunc_normal'.")
             
     def plot_spectral_graph (self):
+        '''
+                función auxiliar para graficar la representación interna de conexiones del RC.
+        '''
         # print (f' max:{torch.max(self.reservoir_weights)} - min :{torch.min(self.reservoir_weights)}')
 
         # Calcular los eigenvalores
@@ -529,27 +666,30 @@ class MyRC:
     mtx_rc_state    = None  # Almacenará los trnasitorios que deseamos que almacene, según la configuración del RC
     
     def __init__ (self, model,  config): #readout,
-        self.model             = model
-        self.readout           = None # readout
-        self.config            = config
-        self.readout_type      = self.config ['readout_type']
-        self.mts_rep           = self.config ['mts_rep']
-        self.w_ridge_embedding = self.config ['w_ridge_embedding']
-        self.w_ridge           = self.config ['w_ridge']
-        self.w_l2              = self.config ['w_l2']
-        self.svm_C             = self.config ['svm_C']
-        self.svm_kernel        = self.config ['svm_kernel'] 
-        self.svm_gamma         = self.config ['svm_gamma']
-        self.mlp_layout        = self.config ['mlp_layout']
-        self.num_epochs        = self.config ['num_epochs']
-        self.nonlinearity      = self.config ['nonlinearity']
-        self.mts_rep           = self.config ['mts_rep']
-        self.dimred_method     = self.config ['dimred_method']
-        self.n_dim             = self.config ['n_dim']
-        self.bidir             = self.config ['bidir']
-        self.threshold         = self.config ['threshold']
-        self.washout           = self.config ['washout']
-        nc_drop                = self.config ['n_drop']
+        self.model                  = model
+        self.readout                = None # readout
+        self.config                 = config
+        self.readout_type           = self.config ['readout_type']
+        self.mts_rep                = self.config ['mts_rep']
+        self.w_ridge_embedding      = self.config ['w_ridge_embedding']
+        self.w_ridge                = self.config ['w_ridge']
+        self.w_l2                   = self.config ['w_l2']
+        self.svm_C                  = self.config ['svm_C']
+        self.svm_kernel             = self.config ['svm_kernel'] 
+        self.svm_gamma              = self.config ['svm_gamma']
+        self.mlp_layout             = self.config ['mlp_layout']
+        self.mlp_batch_size         = self.config ['mlp_batch_size']
+        self.mlp_learning_rate      = self.config ['mlp_learning_rate']
+        self.mlp_learning_rate_type = self.config ['mlp_learning_rate_type']
+        self.num_epochs             = self.config ['num_epochs']
+        self.nonlinearity           = self.config ['nonlinearity']
+        self.mts_rep                = self.config ['mts_rep']
+        self.dimred_method          = self.config ['dimred_method']
+        self.n_dim                  = self.config ['n_dim']
+        self.bidir                  = self.config ['bidir']
+        self.threshold              = self.config ['threshold']
+        self.washout                = self.config ['washout']
+        nc_drop                     = self.config ['n_drop']
         
         # Determinar el número de muestras a eliminar
         if nc_drop is None:
@@ -575,17 +715,17 @@ class MyRC:
                     hidden_layer_sizes  = self.mlp_layout,
                     activation          = self.nonlinearity,
                     alpha               = self.w_l2,
-                    batch_size          = 32,
-                    learning_rate       = 'adaptive', # 'constant' or 'adaptive'
-                    learning_rate_init  = 0.001,
+                    batch_size          = self.mlp_batch_size,
+                    learning_rate       = self.mlp_learning_rate_type, # 'constant' or 'adaptive'
+                    learning_rate_init  = self.mlp_learning_rate,
                     max_iter            = self.num_epochs,
-                    early_stopping      = False, # if True, set validation_fraction > 0
-                    validation_fraction = 0.0 # used for early stopping
+                    early_stopping      = True, # if True, set validation_fraction > 0
+                    validation_fraction = 0.001 # used for early stopping
                     )
             else:
                 raise RuntimeError('Invalid readout type. Only (lin, svm, ovr or mlp')
                 
-        print (f'* self.mts_rep : {self.mts_rep}')
+        # print (f'* self.mts_rep : {self.mts_rep}')
         
         # Initialize ridge regression model
         if self.mts_rep == 'output' or self.mts_rep == 'reservoir':
@@ -600,215 +740,176 @@ class MyRC:
             else:
                 raise RuntimeError('Invalid dimred method ID') 
                 
-    def _process_transient_ESN (self, X):
+    def _process_transient_ESN (self, X, transients_to_drop = None):
         """
-            Process the transients of an Echo State Network (ESN).
-
+            Procesa los transitorios de una Red de Estado Reservado (ESN).
+        
             Args:
-            - data: Input data containing the signals from the ESN.
-
+                - X: Datos de entrada que contienen las señales de la ESN.
+                - transients_to_drop (lista o None): Lista de índices de los transitorios a eliminar.
+        
             Returns:
-            - output: Representation of the last transient of the ESN.
-            - response: State of the ESN with all transients.
+                - output  : Representación del último transitorio de la ESN.
+                - response: Estado de la ESN con todos los transitorios.
         """
-        # print (f'X:{X.shape}')
-        n_serial = X.size (1) # número de instantes de la serie temporal
-          
-        reservoir_state = torch.zeros ((X.size(0), X.size(1), self.model.reservoir_size), dtype = torch.float32)
-        # print (f'* _process_transient_ESN : reservoir_state : {reservoir_state.shape}')
+        n_serial = X.size (1)  # número de instantes de la serie temporal
+        # print (f'transients_to_drop:{transients_to_drop}')
+        # Calcular el número de transitorios a eliminar
+        num_transients_to_drop = len(transients_to_drop) if transients_to_drop is not None else 0
+        # print (f'num_transients_to_drop:{num_transients_to_drop}')
+        # print (f'num_transients_to_drop:{num_transients_to_drop}') 
+        # Calcular el tamaño de reservoir_state considerando los transitorios a eliminar
+        reservoir_state = torch.zeros((X.size(0), n_serial  , self.model.reservoir_size), dtype= torch.float32)
+        rc_state = torch.zeros((X.size(0), n_serial - num_transients_to_drop, self.model.reservoir_size), dtype= torch.float32)
+        # print (f'rc_state:{rc_state.shape}')
+        # print (f'reservoir_state:{reservoir_state.size()}')
+        # print (f'rc_state:{rc_state.size()}')
+        reservoir_index = 0  # Índice para seguir el estado del reservorio
+        # print (f'transients_to_drop:{transients_to_drop}')
         for t in range (n_serial):
-            # print (f' n_serial : t : {t}')
-            input_sequence = X [ :, t, :] # input_data[trial, t:t+1, :]
-            input_sequence = input_sequence.float()
+            input_sequence = X[:, t, :].float()
+            # print (f't:{t}')
             
-            #if t % 10 == 0:
-                #print (f'* _process_transient_ESN : n_sample process {t}/{n_serial}')
+            if transients_to_drop is not None and t in transients_to_drop:
+                continue # Skip processing this transient
             
-            reservoir_state  = self.model (input_sequence, reservoir_state, t)
-  
-        return reservoir_state
-        
-    def remove_random_transients (self, input_data, reservoir_state):
-        transient_indices = None
-        num_transients = min (self.n_drop, input_data.shape [1] - 1)
-        if num_transients > 0:
-            transient_indices = np.random.choice (input_data.shape [1], size = (input_data.shape[1] - num_transients), replace = False)
-            state_matrix = reservoir_state [:, transient_indices, :]
-        else:
-            state_matrix = reservoir_state
-        return state_matrix, transient_indices
+            # Process input_sequence with the ESN model
+            reservoir_state = self.model (input_sequence, reservoir_state, t)
+            # print (f'* reservoir_state:{reservoir_state.size()}')
+            
 
-    def remove_initial_transients (self, input_data, reservoir_state):
-        T = input_data.shape[1]
-        #state_matrix = reservoir_state[:, T - self.n_drop:, :]
-        state_matrix = reservoir_state[:, self.n_drop:, :]
-        return state_matrix, np.arange(0, self.n_drop)
-
-    def not_remove (self, input_data, reservoir_state):
-        # print('not_remove')
-        # print(f'reservoir_state:{reservoir_state.shape}')
-        
-        # Número total de columnas en input_data
-        num_columns = input_data.shape [1]
-        
-        # Calcular los índices de las columnas a eliminar, excluyendo las dos últimas
-        n_drop_indices = np.arange (num_columns - 2)
-        #print(f'n_drop_indices:{n_drop_indices}')
-        
-        if len(n_drop_indices) > 0:
-            # Copiar el estado del reservorio
-            reservoir_state_copy = np.copy (reservoir_state)
+            rc_state [:,reservoir_index,:] = reservoir_state [:,t,:]
+            reservoir_index += 1
             
-            # Verificar si hay más de una columna en la segunda dimensión
-            if reservoir_state.shape[1] > 1:
-                # print(f'reservoir_state (before deletion):{reservoir_state.shape}')
-                
-                # Eliminar las columnas especificadas en n_drop_indices
-                reservoir_state_copy = np.delete (reservoir_state_copy, n_drop_indices, axis = 1)
-                # print(f'reservoir_state (after deletion):{reservoir_state_copy.shape}')
+            # print (f'* reservoir_index:{reservoir_index}')
             
-            # Asignar el resultado a state_matrix
-            state_matrix = reservoir_state_copy
+        if len(rc_state) == 0:
+            return None
+        # print (f'* rc_state:{rc_state.shape}') 
+        return rc_state    
+    def _determine_transients_to_drop (self, n_drop, input_timeline_size):
+        """
+            Determina los índices de los transitorios a eliminar según la configuración.
+        
+            Args:
+            - n_drop (int): Número de transitorios a eliminar.
+            - input_timeline_size (int): Tamaño total de la línea temporal de entrada.
+        
+            Returns:
+            - transients_to_drop (list): Lista de índices de transitorios a eliminar.
+        """
+        transients_to_drop = []
+    
+        if n_drop > 0:
+            if self.washout == 'init':
+                transients_to_drop = list (range (n_drop))
+            elif self.washout == 'rand':
+                transients_to_drop = np.random.choice (input_timeline_size, size = n_drop, replace = False)
+            else:
+                transients_to_drop = list (range (n_drop))
+        elif n_drop < 0:
+            # Eliminar todos menos el último transitorio
+            transients_to_drop = list (range (input_timeline_size - 1))
         else:
-            # Si no hay índices a eliminar, state_matrix es igual a reservoir_state
-            state_matrix = reservoir_state
-        #print(f'np.arange(0, n_drop_indices):{n_drop_indices}')
-        #print(f'state_matrix:{state_matrix.shape}')
-        return state_matrix, n_drop_indices
+            # No eliminar ningún transitorio
+            transients_to_drop = None
+    
+        return transients_to_drop
         
     def _get_states (self, input_data, birdir = False, evaluate = False):
         """
-            Get the states of the Echo State Network (ESN) from EEG signals of each channel.
-
-            Args:
-            - input_data: Input data containing the EEG signals from each channel.
-            - birdir: Flag indicating whether to process the data bidirectionally (default: False).
-
-            Returns:
-            - out_rc: The last transient (last state of ESN).
-            - mts_rep: Representation of all transients.
-            - all_rc: All transients except those specified for deletion by configuration.
+            Obtener los estados de la Red de Estado de Eco (ESN) a partir de señales EEG de cada canal.
             
-            NNote:- The '--123--' marker is used to indicate when all functionality has been tested. Once verified, 'mts_rep' will be removed, leaving only 'all_rc'. 
+            Args:
+            - input_data: Datos de entrada que contienen las señales EEG de cada canal.
+            - bidir: Bandera que indica si procesar los datos en dirección bidireccional (por defecto: False).
+            - evaluate: Bandera que indica si estamos en fase de evaluación (por defecto: False).
+            
+            Returns:
+            - out_rc: El último transitorio (último estado de ESN).
+            - mts_rep: Representación de todos los transitorios.
+            - all_rc: Todos los transitorios excepto los especificados para eliminación según la configuración.
         """
         # Convertir listas a tensores
         if not isinstance (input_data, torch.Tensor):
             input_data   = torch.tensor(input_data, dtype = torch.float32)
      
-        # ============ Buscamos el estado del RC al procesar la series tmeporales ============
-        
-        reservoir_state  = self._process_transient_ESN (input_data)
-        # print (f'* _get_states : reservoir_state : {reservoir_state.shape}')
-        
-        # ============ Determinar el número de transitorios a eliminar y los elimina segun self.n_drop ============
-        n_drop = 0
-        if evaluate: # En fase de test o evaluación no se eliminan transitorios
+        # ============ Obtenemos los indies de los trnasitorios a eliminar ==============
+        n_drop             = 0
+        transients_to_drop = None
+        if not evaluate: # En fase de test o evaluación no se eliminan transitorios
             n_drop = min (self.n_drop, input_data.size(1))
-
-        state_matrix              = None
-        n_drop_indices            = None
-        n_drop_indices_b_adjusted = 0
-        if n_drop > 0:
-            if self.washout == 'init':
-                state_matrix, n_drop_indices  = self.remove_initial_transients (input_data, reservoir_state)
-            elif self.washout == 'rand':
-                state_matrix, n_drop_indices  = self.remove_random_transients (input_data, reservoir_state)
-            else:
-                state_matrix, n_drop_indices  = self.remove_initial_transients (input_data, reservoir_state)
-        elif n_drop < 0:    
-            state_matrix, n_drop_indices  = self.not_remove (input_data, reservoir_state)
-        else:
-            state_matrix   = reservoir_state
-            n_drop_indices = 0
-            
-        # print (f'* get_states : state_matrix : {state_matrix.shape}')
+            transients_to_drop = self._determine_transients_to_drop (n_drop, input_data.size (1)) 
+        # ============ Buscamos el estado del RC al procesar la series tmeporales ============
+        reservoir_state  = self._process_transient_ESN (input_data, transients_to_drop)
+        # print (f'* _get_states : reservoir_state : {reservoir_state.shape}')
+     
+        # print (f'* get_states : reservoir_state : {reservoir_state.shape}')
         # print (f'* get_states : birdir : {birdir}')
         # ============ Si activamos una estado bidireccional del estado interno del ESN ============
         if birdir:
             input_data_b       = torch.tensor(input_data.numpy () [:, ::-1, :].copy(), dtype = torch.float32)
-            reservoir_state_b  = self._process_transient_ESN (input_data_b)
+            reservoir_state_b  = self._process_transient_ESN (input_data_b, transients_to_drop)
             
             # print (f'* get_states : reservoir_state_b : {reservoir_state_b.shape}')
-            
-            state_matrix_b   = None
-            n_drop_indices_b = None
-            if n_drop > 0:
-                if self.washout == 'init':
-                    state_matrix_b, n_drop_indices_b = self.remove_initial_transients (input_data_b, reservoir_state_b)
-                elif self.washout == 'rand':
-                    state_matrix_b, n_drop_indices_b  = self.remove_random_transients (input_data_b, reservoir_state_b)
-                else:
-                    state_matrix_b, n_drop_indices_b  = self.remove_initial_transients (input_data_b, reservoir_state_b)
-            elif n_drop < 0:    
-                state_matrix_b, n_drop_indices_b  = self.not_remove (input_data_b, reservoir_state_b)
-            else:
-                state_matrix_b   = reservoir_state_b
-
-            # print (f'* get_states : state_matrix_b : {state_matrix_b.shape}')
-            # Ajustar índices de eliminación para la secuencia inversa
-            if n_drop_indices_b is None:
-                n_drop_indices_b_adjusted = 0
-            else:
-                n_drop_indices_b_adjusted = input_data.size(1) - np.array(n_drop_indices_b) - 1
-            
-            # Convertir tensores a numpy arrays
-            if torch.is_tensor (state_matrix_b):
-                state_matrix_b = state_matrix_b.detach().numpy()
-                
-            if torch.is_tensor (state_matrix):
-                state_matrix = state_matrix.detach().numpy()   
-                
-            if torch.is_tensor (reservoir_state):
-                reservoir_state = reservoir_state.detach().numpy()
-                
-            if torch.is_tensor (reservoir_state_b):
-                reservoir_state_b = reservoir_state_b.detach().numpy()    
-                
-            mts_rep_state = np.concatenate((state_matrix, state_matrix_b), axis=1)
-            all_rc        = np.concatenate((reservoir_state, reservoir_state_b), axis=1)
+            all_rc = np.concatenate((reservoir_state, reservoir_state_b), axis=1)
         else:
-            mts_rep_state = state_matrix
-            all_rc        = reservoir_state
+            all_rc = reservoir_state
 
         # print ('Procesamiento ESN completado.')
         # print (f'* get_states : all_rc : {all_rc.shape}')
-        # print (f'* get_states : mts_rep_state : {mts_rep_state.shape}')
-        # print (f'* get_states : n_drop_indices : {n_drop_indices}')
-        # print (f'* get_states : n_drop_indices_b_adjusted : {n_drop_indices_b_adjusted}')
-        return mts_rep_state, all_rc, n_drop_indices, n_drop_indices_b_adjusted 
+
+        return  all_rc, transients_to_drop
         
-    def apply_dimensionality_reduction (self, reservoir_state):
-        if self.dimred_method.lower() == 'pca':
-            # matricize
-            n_samples = reservoir_state.shape [0]
-            r_states  = reservoir_state.reshape (-1, reservoir_state.shape [2])                   
-            # ..transform..
-            red_states = self._dim_red.fit_transform (r_states)          
-            # ..and put back in tensor form
-            red_states = red_states.reshape (n_samples, -1, red_states.shape [1])          
-        elif self.dimred_method.lower() == 'tenpca':
-            red_states = self._dim_red.fit_transform (reservoir_state)       
+    def _apply_dimensionality_reduction (self, reservoir_state):
+        """
+            Aplica reducción de dimensionalidad al estado del reservorio según el método especificado.
+            
+            Args:
+            - reservoir_state (numpy.ndarray): Estado del reservorio a reducir dimensionalidad.
+            
+            Returns:
+            - red_states (numpy.ndarray): Estado del reservorio con reducción de dimensionalidad aplicada, si corresponde.
+        """
+        if self.dimred_method is not None:
+            if self.dimred_method.lower() == 'pca':
+                # matricize
+                n_samples = reservoir_state.shape [0]
+                r_states  = reservoir_state.reshape (-1, reservoir_state.shape [2])                   
+                # ..transform..
+                red_states = self._dim_red.fit_transform (r_states)          
+                # ..and put back in tensor form
+                red_states = red_states.reshape (n_samples, -1, red_states.shape [1])          
+            elif self.dimred_method.lower() == 'tenpca':
+                red_states = self._dim_red.fit_transform (reservoir_state)       
+            else: # Skip dimensionality reduction
+                red_states = reservoir_state
         else: # Skip dimensionality reduction
-            red_states = reservoir_state
-    
+                red_states = reservoir_state
+                
         red_states = np.real (red_states) # Occasionally I get complex matrices that the rest of the code does not support
         return red_states
 
-    def compute_internal_representation_output(self, red_states, input_data):
+    def _compute_output_represtn (self, red_states, input_data, n_tr_drop):
         """
-        Computes the internal representation output based on the reduced reservoir states and input data.
-    
-        Args:
-        - red_states (numpy.ndarray): The reduced reservoir states.
-        - input_data (numpy.ndarray or torch.Tensor): The input data.
-    
-        Returns:
-        - numpy.ndarray: The internal representation output.
+            Calcula la representación interna de salida basada en los estados reducidos del reservorio y los datos de entrada.
+            
+            Args:
+            - red_states (numpy.ndarray): Los estados reducidos del reservorio.
+            - input_data (numpy.ndarray or torch.Tensor): Los datos de entrada.
+            - n_tr_drop (list): Lista de índices de transitorios a eliminar.
+            
+            Returns:
+            - numpy.ndarray: La representación interna de salida.
         """
+        # Eliminar las mismas columnas de red_states que se eliminaron de input_data
+        if n_tr_drop is not None:
+            input_data = np.delete (input_data, n_tr_drop, axis = 1)
+
         # Si es bidireccional, concatenar los datos de entrada con su versión invertida
         if self.bidir:
-            if torch.is_tensor(input_data):
-                reversed_input = torch.flip(input_data, dims=[1])
+            if torch.is_tensor (input_data):
+                reversed_input = torch.flip (input_data, dims=[1])
                 input_data = torch.cat((input_data, reversed_input), dim=1)
             else:
                 input_data = np.concatenate((input_data, input_data[:, ::-1, :]), axis=1)
@@ -825,50 +926,24 @@ class MyRC:
         input_repr = np.concatenate((np.vstack(coeff_tr), np.vstack(biases_tr)), axis=1)
         return input_repr
             
-    def compute_internal_representation_output_mtx(self, red_states, input_data, n_drop_indices, n_drop_indices_b):
+    def _compute_reservoir_represtn (self, red_states, input_data, n_tr_drop):
         """
-        Computes the internal representation output based on the reduced reservoir states and input data.
-    
-        Args:
-        - red_states (numpy.ndarray): The reduced reservoir states.
-        - input_data (numpy.ndarray or torch.Tensor): The input data.
-    
-        Returns:
-        - numpy.ndarray: The internal representation output.
+            Calcula la representación del reservorio basada en los estados de reservorio reducidos y los datos de entrada.
+            
+            Args:
+            - red_states (numpy.ndarray): Los estados de reservorio reducidos.
+            - input_data (numpy.ndarray): Los datos de entrada.
+            - n_tr_drop (list): Lista de índices de transitorios a eliminar.
+            
+            Returns:
+            - numpy.ndarray: La salida de representación del reservorio.
         """
-        if self.bidir:
-            if torch.is_tensor(input_data):
-                reversed_input = torch.flip(input_data, dims=[1])
-                input_data = torch.cat((input_data, reversed_input), dim=1)
-            else:
-                input_data = np.concatenate((input_data, input_data[:, ::-1, :]), axis=1)
-
-        if not torch.is_tensor(input_data):
-            input_data = torch.tensor(input_data)
-    
-        if self.n_drop > 0:
-            mask = torch.ones(input_data.size(1), dtype=torch.bool)
-            indices_to_drop = set(n_drop_indices)
-            if self.bidir:
-                indices_to_drop.update(n_drop_indices_b)
-            mask[list(indices_to_drop)] = False
-            input_data_remove = input_data[:, mask, :]
-        else:
-            input_data_remove = input_data
-    
-        coeff_tr, biases_tr = [], []
-    
-        for i in range(input_data.shape[0]):
-            self._ridge_embedding.fit(red_states[i, :-1, :], input_data_remove[i, :-1, :])
-            coeff_tr.append(self._ridge_embedding.coef_.ravel())
-            biases_tr.append(self._ridge_embedding.intercept_.ravel())
-    
-        input_repr = np.concatenate((np.vstack(coeff_tr), np.vstack(biases_tr)), axis=1)
-        return input_repr
-        
-    def fit_ridge_regression (self, red_states, input_data):
         coeff_tr  = []
         biases_tr = []
+        
+        # Eliminar las mismas columnas de red_states que se eliminaron de input_data
+        if n_tr_drop is not None:
+            input_data = np.delete (input_data, n_tr_drop, axis = 1)
         
         for i in range(input_data.shape[0]):
             # print (f'red_states:{red_states [i].shape}')
@@ -879,16 +954,17 @@ class MyRC:
         input_repr = np.concatenate((np.vstack(coeff_tr), np.vstack(biases_tr)), axis=1)
     
         return input_repr
-    def compute_output_layer(self, input_repr, target_data = None):
+        
+    def _compute_readout_layer (self, input_repr, target_data = None):
         """
-        Computes the output layer based on the internal representation and target data.
-    
-        Args:
-        - input_repr (numpy.ndarray): The internal representation.
-        - target_data (numpy.ndarray): The target data for training the output layer. Default is None.
-    
-        Returns:
-        - object: The trained output layer.
+            Calcula la capa de salida basada en la representación interna y los datos objetivo.
+            
+            Args:
+            - input_repr (numpy.ndarray): La representación interna.
+            - target_data (numpy.ndarray): Los datos objetivo para entrenar la capa de salida. Por defecto es None.
+            
+            Returns:
+            - object: La capa de salida entrenada.
         """
         output_rc_layer = None
         if target_data is None or self.readout_type is None:
@@ -910,6 +986,153 @@ class MyRC:
             output_rc_layer = self.readout.fit(input_repr, target_data)
      
         return output_rc_layer
+    
+    def _convert_to_one_hot (self, pred_class_max, num_classes = 2):
+        """
+            Convierte las predicciones de clases maximizadas en codificación one-hot.
+    
+            Args:
+            - pred_class_max (numpy.ndarray): Predicciones de clases maximizadas (números enteros).
+            - num_classes (int): Número total de clases. Por defecto es 2.
+    
+            Returns:
+            - numpy.ndarray: Matriz codificada en one-hot.
+        """
+        num_samples = len(pred_class_max)
+        one_hot = np.zeros((num_samples, num_classes), dtype=np.int32)
+
+        for i in range(num_samples):
+            if pred_class_max[i] == 0:
+                one_hot[i, 0] = 1  # Clase 0: 10
+            elif pred_class_max[i] == 1:
+                one_hot[i, 1] = 1  # Clase 1: 01
+
+        return one_hot
+    def _compute_multilabel_test_scores(self, y_pred, Yte, multi_label=True):
+        """
+            Calcula las métricas de evaluación multilabel para la predicción y los datos de prueba.
+        
+            Args:
+                - y_pred (numpy.ndarray): Las predicciones del modelo.
+                - Yte (numpy.ndarray): Las etiquetas verdaderas de los datos de prueba.
+                - multi_label (bool): Indica si las etiquetas son multilabel o no. Por defecto es True.
+        
+            Returns:
+                - float: F1-Score ponderado o macro/micro según el promedio especificado.
+                - float: Precisión del modelo.
+                - numpy.ndarray: Matriz de confusión multilabel.
+        """
+        # Comprobar si son multilabel
+        if Yte.shape[1] > 2:
+            true_class = np.argmax(Yte, axis=1)
+            accuracy = accuracy_score(true_class, y_pred, multi_label=multi_label)
+            f1 = f1_score(true_class, y_pred, average='weighted')
+        else:
+            true_class = Yte[:, 0]  # Asignar las etiquetas binarias
+            f1 = f1_score(true_class, y_pred, average='binary')
+            accuracy = accuracy_score(true_class, y_pred)
+    
+        # Calcular la matriz de confusión multilabel
+        confusion_matrices = multilabel_confusion_matrix(Yte, y_pred)
+    
+        # Imprimir resultados
+        print("Matriz de Confusión Multilabel:")
+        print(confusion_matrices)
+        print("F1-Score Multilabel:", f1)
+        print("Accuracy-Score Multilabel:", accuracy)
+    
+        return f1, accuracy, confusion_matrices
+    def _evaluate_readout(self, labels, labels_pred, multi_label=True):
+        """
+        Calcula y muestra varias métricas de evaluación para el clustering, incluyendo la matriz de confusión,
+        frecuencia, precisión, recall, F1 score, ROC AUC score y la curva ROC. También muestra el reporte de clasificación.
+    
+        Args:
+            labels (array-like): Etiquetas reales.
+            labels_pred (array-like): Etiquetas predichas por el modelo de clustering.
+            multi_label (bool): Indica si las métricas deben ser calculadas en un contexto multietiqueta.
+        Returns:
+            - report: Resumen de las métricas (Accuracy, f1, recall..)
+        """
+        
+        if multi_label:
+            # Calcular la matriz de confusión multietiqueta
+            cm = multilabel_confusion_matrix(labels, labels_pred)
+            print("Multilabel Confusion Matrix:")
+            print(cm)
+    
+            # Graficar la matriz de confusión para cada etiqueta
+            for i, conf_matrix in enumerate(cm):
+                plt.figure(figsize=(10, 7))
+                sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', cbar=False)
+                plt.xlabel('Predicted')
+                plt.ylabel('Actual')
+                plt.title(f'Confusion Matrix for label {i}')
+                plt.show()
+    
+            # Calcular otras métricas multietiqueta
+            accuracy = accuracy_score(labels, labels_pred)
+            precision = precision_score(labels, labels_pred, average='weighted')
+            recall = recall_score(labels, labels_pred, average='weighted')
+            f1 = f1_score(labels, labels_pred, average='weighted')
+            roc_auc = roc_auc_score(labels, labels_pred, average='weighted')
+        else:
+            # Calcular la matriz de confusión normal
+            cm = confusion_matrix(labels, labels_pred)
+            print("Confusion Matrix:")
+            print(cm)
+    
+            # Graficar la matriz de confusión
+            plt.figure(figsize=(10, 7))
+            sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False, xticklabels=np.unique(labels), yticklabels=np.unique(labels))
+            plt.xlabel('Predicted')
+            plt.ylabel('Actual')
+            plt.title('Confusion Matrix')
+            plt.show()
+    
+            # Calcular otras métricas
+            accuracy = accuracy_score(labels, labels_pred)
+            precision = precision_score(labels, labels_pred, average='weighted')
+            recall = recall_score(labels, labels_pred, average='weighted')
+            f1 = f1_score(labels, labels_pred, average='weighted')
+            roc_auc = roc_auc_score(labels, labels_pred)
+    
+        print("Accuracy:", accuracy)
+        print("Precision:", precision)
+        print("Recall:", recall)
+        print("F1 Score:", f1)
+        print("ROC AUC Score:", roc_auc)
+    
+        if not multi_label:
+            # Calcular la curva ROC solo si no es multietiqueta
+            fpr, tpr, _ = roc_curve(labels, labels_pred)
+    
+            # Graficar la curva ROC
+            plt.figure()
+            plt.plot(fpr, tpr, color='blue', lw=2, label=f'ROC curve (area = {roc_auc:.2f})')
+            plt.plot([0, 1], [0, 1], color='gray', lw=2, linestyle='--')
+            plt.xlim([0.0, 1.0])
+            plt.ylim([0.0, 1.05])
+            plt.xlabel('False Positive Rate')
+            plt.ylabel('True Positive Rate')
+            plt.title('Receiver Operating Characteristic')
+            plt.legend(loc="lower right")
+            plt.show()
+    
+        # Reporte de clasificación
+        report = classification_report(labels, labels_pred)
+        print("Classification Report:")
+        print(report)
+    
+        return {
+            "accuracy": accuracy,
+            "precision": precision,
+            "recall": recall,
+            "f1": f1,
+            "roc_auc": roc_auc,
+            "classification_report": report
+        }
+  
     def fit (self, input_data, target_data = None):
         '''
             Entrena el modelo ESN con los datos de entrada y opcionalmente con los datos de destino.
@@ -934,61 +1157,46 @@ class MyRC:
          #print (f'fit :  input_data: {input_data.shape}')
 
         with torch.no_grad ():
-            # get_states (model, input_data, target_data, reservoir_state, config):
-            mts_rep_state, rc_state, n_drop_indices, n_drop_indices_b = self._get_states (input_data, self.bidir, evaluate = False)
+            mts_rep_state, n_tr_drop = self._get_states (input_data, self.bidir, evaluate = False)
 
-        # print ('fit :', mts_rep_state [:,-1,:])
-        self.reservoir_state  = rc_state       # Almacenamos todos los transitorios sin eliminar n_drop 
-        self.mtx_rc_state     = mts_rep_state  # Almacenamos aquellos transitoriso que hemos dicho que se almacene 
+        rc_state = mts_rep_state  # Almacenamos aquellos transitorios que indicamos en configuración
         
-        # print (f'fit :  self.mtx_rc_state: {self.mtx_rc_state.shape}')
-        # print (f'fit :  self.reservoir_state: {self.reservoir_state.shape}')
+        # print (f'fit :  self.mts_rep_state: {self.mts_rep_state.shape}')
 
         # ============ Dimensionality reduction of the reservoir states ============  
         
         # print (f'fit :  self.dimred_method: {self.dimred_method}')
-        
-        red_states     = self.apply_dimensionality_reduction (self.reservoir_state)
-        mtx_red_states = self.apply_dimensionality_reduction (self.mtx_rc_state)
-        
-        #print (f'fit : red_states:{red_states.shape}')  
-        #print (f'fit : mtx_red_states:{mtx_red_states.shape}') 
+        if self.dimred_method is not None:
+            rc_dim_states = self._apply_dimensionality_reduction (rc_state)
+        else:
+            rc_dim_states = rc_state
+        #print (f'fit : self.rc_dim_states:{self.rc_dim_states.shape}') 
         
         # ============ Generate representation of the MTS ============
-        # Output model space representation
         if self.mts_rep == 'output':
-            input_repr     = self.compute_internal_representation_output (red_states, input_data)  
-            mtx_input_repr = self.compute_internal_representation_output_mtx (mtx_red_states, input_data, n_drop_indices, n_drop_indices_b)
-        # Reservoir model space representation
+            input_repr = self._compute_output_represtn (rc_dim_states , input_data, n_tr_drop)  
         elif self.mts_rep == 'reservoir':
-            input_repr     = self.fit_ridge_regression (red_states, input_data) 
-            mtx_input_repr = self.fit_ridge_regression (mtx_red_states, input_data) 
-         # Last state representation        
+            input_repr = self._compute_reservoir_represtn (rc_dim_states, input_data, n_tr_drop) 
         elif self.mts_rep == 'last':
-            input_repr     = red_states [:, -1, :]
-            mtx_input_repr = mtx_red_states [:, -1, :]
-         # Mean state representation        
+            input_repr     = rc_dim_states [:, -1, :]
         elif self.mts_rep == 'mean':
-            input_repr     = np.mean (red_states, axis = 1)
-            mtx_input_repr = np.mean (mtx_red_states, axis = 1)
+            input_repr = np.mean (rc_dim_states, axis = 1)
         elif self.mts_rep == 'id':
-            input_repr     = red_states
-            mtx_input_repr = mtx_red_states
+            input_repr = rc_dim_states
         else:
             raise RuntimeError('Invalid representation ID: output, reservoir, last o mean')  
-        
-        self.mtx_input_repr = mtx_input_repr
-        self.input_repr     = input_repr
-        
-        # print (f'fit : mtx_input_repr:{mtx_input_repr.shape}')
-        # print (f'fit : input_repr:{input_repr.shape}')
+       # print (f'fit : input_repr:{input_repr.shape}')
+        self.input_repr_tr = input_repr
         # ============ Apply readout ============
-        self.output_rc_layer     = self.compute_output_layer (self.input_repr, target_data)
-        self.mtx_output_rc_layer = self.compute_output_layer (self.mtx_input_repr, target_data)
+        if self.readout_type is not None:
+            output_redout_layer = self._compute_readout_layer (input_repr, target_data)
+        else:
+            output_redout_layer = input_repr
         
-        return self.output_rc_layer, self.mtx_output_rc_layer, self.reservoir_state, self.mtx_rc_state, self.input_repr, self.mtx_input_repr, red_states, mtx_red_states
+        # Devolvemos: Estados internos neuronas, Etados internos reducidos a PCA, Representación estados internos, Readout
+        return  rc_state, rc_dim_states, input_repr, output_redout_layer
 
-    def fit_evaluate (self, Xte, Y_test):
+    def fit_evaluate (self, Xte, Yte):
         '''
             Evalúa el modelo ESN utilizando datos de prueba y calcula la precisión y la puntuación F1.
 
@@ -1005,189 +1213,113 @@ class MyRC:
                 pred_class: numpy.ndarray
                     Clases predichas por el modelo.
         '''
+        print (f'fit_evaluate :Yte: {Yte}') 
         # Nota: En fase de evaluación no se eliminan transitorios
         # ============ Compute reservoir states ============
-        mts_rep_te, rc_state_te, n_drop_indices, n_drop_indices_b  = self._get_states (Xte, self.bidir, evaluate = True)
+        with torch.no_grad ():
+            mts_rep_state_xte, n_tr_drop = self._get_states (Xte, self.bidir, evaluate = True)
 
-        print (f'fit_evaluate :mts_rep_te: {mts_rep_te.shape}')    
-        print (f'fit_evaluate :rc_state_te: {rc_state_te.shape}')  
-        print (f'fit_evaluate :n_drop_indices: {n_drop_indices}') 
-        print (f'fit_evaluate :n_drop_indices_b: {n_drop_indices_b}') 
-        
+        print (f'fit_evaluate :mts_rep_state_xte: {mts_rep_state_xte.shape}')    
+        print (f'fit_evaluate :n_tr_drop: {n_tr_drop}')  
+
         # ============ Dimensionality reduction of the reservoir states   ============
-        if self.dimred_method.lower() == 'pca':
-            n_samples  = mts_rep_te.shape [0]
-            res_states = mts_rep_te.reshape  (-1, mts_rep_te.shape [2])                   
-            # ..transform..mts_rep_te
-            red_states = self._dim_red.fit_transform(res_states)          
-            # ..and put back in tensor form
-            red_states_te = red_states.reshape(n_samples,-1,red_states.shape [1])          
-        elif self.dimred_method.lower() == 'tenpca':
-            if torch.is_tensor (mts_rep_te):
-                mts_rep_te = mts_rep_te.detach().numpy()
-            red_states_te = self._dim_red.fit_transform (mts_rep_te)       
-        else: # Skip dimensionality reduction
-            red_states_te = mts_rep_te
-            
-        print (f'fit_evaluate : red_states_te:{red_states_te.shape}')          
-        # ============ Generate representation of the MTS ============
-        coeff_te  = []
-        biases_te = []
-        
-        if torch.is_tensor(red_states_te):
-            red_states_te = red_states_te.detach().numpy()
-        if torch.is_tensor(mts_rep_te):
-            mts_rep_te = mts_rep_te.detach().numpy()   
-        
-        # Output model space representation
-        if self.mts_rep=='output':
-            if self.bidir:
-                Xte = np.concatenate ((Xte, Xte[:, ::-1, :]), axis = 1)  
- 
-            for i in range(Xte.shape[0]):
-                self._ridge_embedding.fit(red_states_te[i, 0:-1, :], Xte[i, 0:-1, :])
-                coeff_te.append(self._ridge_embedding.coef_.ravel())
-                biases_te.append(self._ridge_embedding.intercept_.ravel())
-            input_repr_te = np.concatenate((np.vstack(coeff_te), np.vstack(biases_te)), axis=1)
-        
-        # Reservoir model space representation
-        elif self.mts_rep=='reservoir':    
-            for i in range(Xte.shape[0]):
-                self._ridge_embedding.fit(red_states_te[i, 0:-1, :], red_states_te[i, 1:, :])
-                coeff_te.append(self._ridge_embedding.coef_.ravel())
-                biases_te.append(self._ridge_embedding.intercept_.ravel())
-            input_repr_te = np.concatenate((np.vstack(coeff_te), np.vstack(biases_te)), axis=1)
-    
-        # Last state representation        
-        elif self.mts_rep=='last':
-            input_repr_te = red_states_te[:, -1, :]
-        # Mean state representation        
-        elif self.mts_rep=='mean':
-            input_repr_te = np.mean(red_states_te, axis=1)
-            
+        if self.dimred_method is not None:
+            rc_dim_states_xte = self._apply_dimensionality_reduction (mts_rep_state_xte)
         else:
-            raise RuntimeError('Invalid representation ID: output, reservoir, last, mean') 
-
-        print (f'fit_evaluate :input_repr_te: {input_repr_te.shape}')
-        self.input_repr_te = input_repr_te
+            rc_dim_states_xte = mts_rep_state_xte
+        # ============ Generate representation of the MTS ============
+        if self.mts_rep == 'output':
+            input_repr_xte = self._compute_output_represtn (rc_dim_states_xte, Xte, n_tr_drop)  
+        elif self.mts_rep == 'reservoir':
+            input_repr_xte = self._compute_reservoir_represtn (rc_dim_states_xte, Xte, n_tr_drop) 
+        elif self.mts_rep == 'last':
+            input_repr_xte = rc_dim_states_xte [:, -1, :]
+        elif self.mts_rep == 'mean':
+            input_repr_xte = np.mean (rc_dim_states_xte, axis = 1)
+        elif self.mts_rep == 'id':
+            input_repr_xte = rc_dim_states_xte
+        else:
+            raise RuntimeError('Invalid representation ID: output, reservoir, last o mean') 
+            
         # ============ Apply readout ============
         print (f'fit_evaluate :lin :fit_evaluate :self.readout_type : {self.readout_type }')
+        Y_test_int = Yte.astype (int)
         pred_class = None
         if self.readout_type == 'lin':  # Linear regression
-            logits = self.readout.predict(input_repr_te)
-            pred_prob = 1 / (1 + np.exp(-logits))
-            pred_class_max = np.argmax(logits, axis=1)
-            pred_class = self.convert_to_one_hot(pred_class_max)
+            logits = self.readout.predict (input_repr_xte)
+            pred_prob      = 1 / (1 + np.exp(-logits))
+            pred_class_max = np.argmax (logits, axis=1)
+            pred_class     = self._convert_to_one_hot (pred_class_max)
+             
             print(f'fit_evaluate :lin :logits : {logits}')
             print(f'fit_evaluate :lin :pred_class : {pred_class}')
             print(f'fit_evaluate :lin :pred_prob : {pred_prob}')
             print(f'fit_evaluate :lin :pred_class_max : {pred_class_max}')
-            Y_test_int = Y_test.astype(int)
         elif self.readout_type == 'svm':  # SVM readout
-            Kte = cdist(input_repr_te, self.input_repr, metric='sqeuclidean')
-            Kte = np.exp(-self.svm_gamma * Kte)
-            pred_class = self.readout.predict(Kte)
-            pred_class_multilabel = np.zeros_like(Y_test)
+            Kte = cdist (input_repr_xte, self.input_repr_tr, metric = 'sqeuclidean')
+            Kte = np.exp (-self.svm_gamma * Kte)
+            
+            pred_class            = self.readout.predict (Kte)
+            pred_class_multilabel = np.zeros_like (Y_test_int)
+            
             for i, label in enumerate(pred_class):
-                pred_class_multilabel[i, label] = 1
+                pred_class_multilabel [i, label] = 1
+                
             pred_class = pred_class_multilabel
-            Y_test_int = Y_test.astype(int)
+            
             print(f'fit_evaluate _SVM:Yte : {Y_test_int}')
             print(f'fit_evaluate _SVM:pred_class : {pred_class}')
         
         elif self.readout_type == 'ovr':  # One-vs-Rest Classifier
-            pred_prob = self.readout.predict_proba(input_repr_te)
+            pred_prob = self.readout.predict_proba (input_repr_xte)
             print(f'fit_evaluate :ovr :pred_prob : {pred_prob}')
             pred_class = (pred_prob > self.threshold).astype(int)
-            Y_test_int = Y_test.astype(int)
+            
             print(f'fit_evaluate :Yte : {Y_test_int}')
             print(f'fit_evaluate :pred_class : {pred_class}')
         
         elif self.readout_type == 'mlp':  # MLP (deep readout)
-            pred_prob = self.readout.predict_proba(input_repr_te)
-            pred_class_max = np.argmax(pred_prob, axis=1)
-            pred_class = self.convert_to_one_hot(pred_class_max)
-            print(f'fit_evaluate :mlp :pred_class : {pred_class}')
+            pred_prob      = self.readout.predict_proba (input_repr_xte)
+            pred_class_max = np.argmax (pred_prob, axis = 1)
+            pred_class     = self._convert_to_one_hot (pred_class_max)
+            
             print(f'fit_evaluate :mlp :pred_prob : {pred_prob}')
             print(f'fit_evaluate :mlp :pred_class_max : {pred_class_max}')
-            Y_test_int = Y_test.astype(int)
+            print(f'fit_evaluate :mlp :pred_class : {pred_class}')
         else:
             print("Error while evaluating. When evaluating, we need to have a correct readout (lin, svm, ovr, or mlp).")
             return None, None, None
 
         if pred_class is not None:
-            Y_test_int = Y_test.astype(int)
             print(f'fit_evaluate :Yte : {Y_test_int}')
             print(f'fit_evaluate :pred_class : {pred_class}')
-            if Y_test.shape[1] > 1:
-                f1, c_matrix = self.compute_multilabel_test_scores(pred_class, Y_test_int)
-                return pred_class, f1, c_matrix
-            else:
-                f1 = f1_score(Y_test_int, pred_class, average='micro')  # o 'macro', 'weighted'
-                c_matrix = multilabel_confusion_matrix(Y_test_int, pred_class)
-                print("F1-score:", f1)
-                print("Confusion Matrix:\n", c_matrix)
-                accuracy, f1, c_matrix = self.compute_test_scores(pred_class, Y_test_int)
-                return pred_class, accuracy, f1, c_matrix
-        else:
-            return None, None, None
-
             
-    def compute_test_scores_ (self, pred_class, Yte):
-        """
-        Compute classification accuracy and F1 score for multilabel classification.
-        """
-        accuracy = accuracy_score(Yte, pred_class, multi_label=True)
-        f1 = f1_score(Yte, pred_class, average='weighted', multi_label=True)
-    
-        return accuracy, f1
-        
-    def compute_test_scores (self, pred_class, Yte):
-        """
-        Wrapper to compute classification accuracy and F1 score
-        """
-        true_class = np.argmax(Yte, axis=1)
-    
-        accuracy = accuracy_score(true_class, pred_class)
-        if Yte.shape[1] > 2:
-            f1 = f1_score(true_class, pred_class, average='weighted')
+            # f1, accuracy, confusion_matrices = self._compute_multilabel_test_scores (pred_class, Y_test_int)
+            # return pred_class, f1, accuracy, confusion_matrices
+            # {
+             #"accuracy": accuracy,
+             #"precision": precision,
+             #"recall": recall,
+             #"f1": f1,
+             #"roc_auc": roc_auc,
+             #"classification_report": report
+             # }
+            metrics  = self._evaluate_readout (Y_test_int, pred_class)
+            return metrics ["classification_report"]
         else:
-            f1 = f1_score(true_class, pred_class, average='binary')
-    
-        return accuracy, f1
+            # return None, None, None, None
+            return None
+            
     def generate_representation (self, val_data):
+        '''
+            Calcular la representación utilizando los estados del reservorio
+        '''
         #  Calcular la representación utilizando los estados del reservorio
         val_repr = np.dot (val_data, self.reservoir_state)  # Ejemplo de representación básica: producto punto entre los datos de validación y los estados del reservorio
 
         return val_repr
-    def convert_to_one_hot (self, pred_class_max, num_classes = 2):
-        num_samples = len(pred_class_max)
-        one_hot = np.zeros((num_samples, num_classes), dtype=np.int32)
 
-        for i in range(num_samples):
-            if pred_class_max[i] == 0:
-                one_hot[i, 0] = 1  # Clase 0: 10
-            elif pred_class_max[i] == 1:
-                one_hot[i, 1] = 1  # Clase 1: 01
 
-        return one_hot
-
-    
-    def compute_multilabel_test_scores (self, y_pred, Yte):
-        # Comprobar si son multilabel
-        # Calcular la matriz de confusión multilabel
-        confusion_matrices = multilabel_confusion_matrix(Yte, y_pred)
-
-        # Calcular el F1-score multilabel
-        f1 = f1_score(Yte, y_pred, average='weighted')
-
-        # Imprimir resultados
-        print("Matriz de Confusión Multilabel:")
-        print(confusion_matrices)
-        print("F1-Score Multilabel:", f1)
-        
-        return f1, confusion_matrices
- 
     def train_validate_predict (self, train_data, val_data, train_states):
         # Predicción utilizando el estado interno del RC ya entrenado
         # (Esta funcion se utiliza una vez se haya entrenado el modelo y guardado los estados del reservorio)
@@ -1219,11 +1351,10 @@ class MyRC:
         plt.show ()   
 
     
-from sklearn.preprocessing import StandardScaler
-from scipy.stats import pearsonr
-from sklearn.metrics import mean_squared_error
-from sklearn.metrics import mean_absolute_error
-#from tslearn.metrics import dtw
+############################# 
+## Funciones auxiliares
+#############################
+ 
 
 def print_prediction_results (ground_truth, predicted):
     """
@@ -1331,15 +1462,47 @@ def normalize_time_series (time_series_data):
 
 
 def summary(model, input_size):
+    """
+    Función para imprimir un resumen de parámetros de un modelo de red neuronal.
+
+    Args:
+    - model (nn.Module): El modelo de red neuronal PyTorch.
+    - input_size (tuple): El tamaño de la entrada esperada para el modelo.
+
+    Prints:
+    - Imprime por consola el total de parámetros y los parámetros entrenables del modelo.
+    """
+
     total_params = 0
     trainable_params = 0
     input_shape = input_size
 
     def register_hook(module):
+        """
+        Función interna para registrar ganchos (hooks) en cada módulo del modelo.
+
+        Args:
+        - module (nn.Module): El módulo del modelo para registrar el gancho.
+
+        Returns:
+        - None
+        """
         def hook(module, input, output):
+            """
+            Función de gancho para calcular el número total y entrenable de parámetros.
+
+            Args:
+            - module (nn.Module): El módulo del modelo.
+            - input (tuple): Entrada del módulo.
+            - output (Tensor): Salida del módulo.
+
+            Returns:
+            - None
+            """
             nonlocal total_params, trainable_params
             total_params += sum(p.numel() for p in module.parameters())
             trainable_params += sum(p.numel() for p in module.parameters() if p.requires_grad)
+            # Imprimir información opcionalmente
             # print(f"{module.__class__.__name__}:")
             # print(f"  Input shape: {input[0].shape}")
             # print(f"  Output shape: {output.shape}")
@@ -1349,13 +1512,21 @@ def summary(model, input_size):
 
     hooks = []
     model.apply(register_hook)
+
     # Crear un tensor de estado de reservorio con ceros del tamaño adecuado
     reservoir_state = torch.zeros((1, model.reservoir_size), dtype=torch.float32)
-    model(torch.tensor (1,2) , reservoir_state)  # Pasar el tensor de estado de reservorio como argumento adicional
+    try:
+        # Ejecutar un pase hacia adelante de ejemplo para obtener formas de entrada y salida
+        with torch.no_grad():
+            model(torch.tensor(1, 2), reservoir_state)  # Aquí asumí que 1 y 2 son ejemplos de datos ficticios
 
-    for hook in hooks:
-        hook.remove()
+    finally:
+        for hook in hooks:
+            hook.remove()
 
     print(f"Total de parámetros: {total_params}")
     print(f"Parámetros entrenables: {trainable_params}")
 
+# Ejemplo de uso:
+# Suponiendo que `model` es una instancia de nn.Module y `input_size` es el tamaño de entrada esperado
+# summary(model, input_size)

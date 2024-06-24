@@ -11,6 +11,12 @@ pyvistaqt
 # MNE permite el análisis de datos de electroencefalografía (EEG) y magnetoencefalografía (MEG), incluyendo preprocesamiento, análisis estadístico y visualización.
 mne
 
+# Biblioteca para análisis de señales EEG/MEG
+# El API de YASA está diseñado para el procesamiento de señales EEG, ofreciendo algoritmos avanzados para la detección de patrones y eventos específicos en los datos de 
+# electroencefalografía. Permite a los usuarios realizar análisis detallados y en tiempo real de las señales cerebrales para aplicaciones en neurociencia y desarrollo de 
+# interfaces cerebro-computadora.
+yasa
+
 # Herramientas para el análisis de datos de EEG/MEG
 # Biblioteca complementaria a MNE, proporcionando herramientas adicionales para el análisis y preprocesamiento de datos EEG/MEG.
 python-picard

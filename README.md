@@ -164,7 +164,9 @@ Se construyó una API configurada mediante un diccionario config. Este diccionar
 Para instalar las dependencias del proyecto, ejecuta:
       
       pip install -r requirements.txt
-
+Además hay que tener en cuena que se debe instarlar torch, dependerá del sistema operativo :
+   https://pytorch.org/get-started/locally/
+   
 # Uso
 
 Puedes utilizar tanto el código que hay en los notebooks como los diferentes scripts existentes en el directorio para realizar la evaluación.

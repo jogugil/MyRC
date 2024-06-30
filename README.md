@@ -620,9 +620,18 @@ Se construyó una API configurada mediante un diccionario config. Este diccionar
 
 # Entregas presentes en el proyecto 
 
-## Datos Sintéticos
+### Datos Sintéticos
 
 Los datos sintéticos son generados artificialmente para simular situaciones específicas o para llenar lagunas en conjuntos de datos reales. En esta sección, se explica cómo se generaron datos sintéticos para simular señales temporales de los diferentes electrodos en cada EEG de cada sujeto. Se describen los métodos y algoritmos utilizados para generar estos datos sintéticos y cómo se ajustan a las características de los datos reales, incluyendo la adición de ruido para simular condiciones más realistas.
+
+### RC ESN
+
+Se entrega un notebook con el cual se realizó el procesado y tratamiento de los datos reales, creando diferentes datasets con diferentes combinaciones de canales y funcionalidades (frecuencias del filro pasa banda, eliminación o no de artefactos, extracción o no de características).
+
+En el mismo notebook se implementa varios chunks ejemplo del uso del API del RC ESN para la omplementaión de m´ñtodos no supercisaos y obtención de clústers de sujetos (jovenes adultos y mayores). Así como el uso de readout para la clasificación supervisada de lso sujetos. 
+
+Además se presentan diferentes scripts de python donde se peuden ejecutar el mismo código comentado. 
+Se aportan difernetes scripts con algoritmo geneticos y probabilidad bayesiana para la búsqueda, a modo gridsearch, de los valores óptimos para aquellos hiperparñametros más omportantes.
 
 ### Deep ESN
 
@@ -633,7 +642,6 @@ Se entrega un notebook que contiene una posible implementación de un modelo Dee
 ![imagen](https://github.com/jogugil/MyRC/assets/15160072/84ff6c2c-0926-4d35-a774-da1ecf57ecc3)
 
  
-
 
 # Resultados
 

@@ -109,13 +109,14 @@ exg_channels = ['EXG5', 'EXG6', 'EXG7', 'EXG8']
 Las señales EEG procesadas en este proyecto permiten la reconstrucción y predicción de patrones temporales. Además, se utiliza tanto el aprendizaje supervisado como no supervisado para extraer características significativas y realizar la clasificación de sujetos.
 
 Como preprocesamiento de los datos aplicamos un filtro paso banda que mantenga las frecuencias de las ondas cerebrales (0.2-30)Khz, dejando fuera las ondas Gamma que llegan hasta 100Khz. Despues del filtrado que permite eliminar ruido y artefactos de alta frecuencia, además de los artefactos asociados a la corriente eléctrica (50khz y sus armónicos), podemos aplicar un proceso de eliminación de artefactos mediante un modelo ICA: 
-# Diagrama de Proceso para la Función `remove_ica_components_artifact`
 
-## Descripción General
+#### Diagrama de Proceso para la Función `remove_ica_components_artifact`
+
+##### Descripción General
 
 La función `remove_ica_components_artifact` se utiliza para eliminar componentes ICA identificados como artefactos en datos EEG. A continuación se detalla el proceso paso a paso.
 
-## Pasos del Proceso
+***Pasos del Proceso***
 
 1. **Copiar Datos EEG**
    - Si `get_fraw()` es `None`, copia los datos originales de `get_raw()`.
@@ -160,7 +161,7 @@ graph TD;
     J --> K[Aplicar ICA Excluyendo Componentes]
     K --> L[Actualizar Datos Filtrados]
     L --> M[Devolver Datos Filtrados]
-```
+
 # API Construida
 
 Se construyó una API configurada mediante un diccionario config. Este diccionario contiene diferentes parámetros que se transforman en hiperparámetros para el modelo, permitiendo una fácil personalización y ajuste del modelo a diferentes necesidades experimentales.

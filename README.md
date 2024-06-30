@@ -119,24 +119,20 @@ La función `remove_ica_components_artifact` se utiliza para eliminar componente
 ***Pasos del Proceso***
 
 1. **Copiar Datos EEG**
-   - Si `get_fraw()` es `None`, copia los datos originales de `get_raw()`.
-   - Si `get_fraw()` no es `None`, copia estos datos.
-
+  
 2. **Inicializar ICA**
-   - Inicializa el objeto ICA con `random_state = 42`.
 
 3. **Ajustar ICA a los Datos**
-   - Ajusta ICA a los datos copiados.
 
 4. **Aplicar ICA y Rechazar Segmentos**
-   - Llama a `_apply_ica_and_reject_segments` para detectar y excluir componentes ICA con artefactos.
+   - Eliminamos los artefactos asociados a los movimientos oculares, cardiacos y/o musculares
 
 5. **Detectar y Excluir Componentes ICA de Alta Varianza**
-   - Llama a `_detect_and_exclude_high_variance_ica` para identificar componentes ICA con alta varianza, amplitud y picos altos.
+   - Identificar componentes ICA con alta varianza, amplitud y picos altos.
 
-6. **Excluir Componentes ICA Identificados**
-   - Combina los índices de componentes identificados como artefactos en los pasos anteriores.
-   - Aplica ICA excluyendo estos componentes.
+6. **Excluir Componentes ICA  mediante histograma**
+   - Identificar componentes  ICA excluyendo los componentes cuya densidad del histograma de amplitudes no se aproxima a una normal. Se ha estudiado que este tipo de señales mantiene una distribución normal. Los componentes que no mantienen esta distribución son aquellas que aportan artefactos con picos de señal con amplitudes extradamente elevados.
+     
 
 7. **Actualizar Datos Filtrados**
    - Actualiza `fraw` con los datos filtrados.
@@ -144,7 +140,7 @@ La función `remove_ica_components_artifact` se utiliza para eliminar componente
 8. **Devolver Datos Filtrados**
    - Retorna los datos filtrados.
 
-## Diagrama de Flujo
+#### Diagrama de Flujo
 
 ```mermaid
 graph TD;
@@ -162,6 +158,10 @@ graph TD;
     K --> L[Actualizar Datos Filtrados]
     L --> M[Devolver Datos Filtrados]
 
+Después de eliminar o no lso artefactos debemos crear una matriz tridimensional {número sujetos, tamaño señales, nñumero canales}. Creando series temporales multivariante por sujeto. Fijamos para todos los sujetos y canales el mismo tamaño de señal.
+
+Y finalmente lo ideal es normalizar los datos bien mediante una estandarización o una normalización (min-max).
+ 
 # API Construida
 
 Se construyó una API configurada mediante un diccionario config. Este diccionario contiene diferentes parámetros que se transforman en hiperparámetros para el modelo, permitiendo una fácil personalización y ajuste del modelo a diferentes necesidades experimentales.

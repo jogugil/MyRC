@@ -14,7 +14,7 @@ Para llevar a cabo los experimentos, primero generamos datos sintéticos que sim
 
 Para llevar a cabo los experimentos, primero generamos datos sintéticos que simulan los EEG de diferentes sujetos, creando dos poblaciones distintas: una de jóvenes adultos y otra de mayores. La generación de estos datos se basa en modelos estocásticos y técnicas de simulación que permiten reproducir características clave de las señales EEG reales.
 
-## Modelo Generativo Estocástico
+### Modelo Generativo Estocástico
 
 El proceso de generación de datos sintéticos de EEG que se ha utilizado (función 'generate_synthetic_eeg_data' del módulo 'eeg.py') sigue los siguientes pasos clave:
 
@@ -33,7 +33,7 @@ El proceso de generación de datos sintéticos de EEG que se ha utilizado (funci
 
 5. **Ruido Gaussiano**: Finalmente, se añade ruido gaussiano a las señales para imitar las condiciones de grabación reales, donde siempre existe una cierta cantidad de ruido de fondo.
 
-## Justificación del Proceso
+### Justificación del Proceso
 
 La elección de este proceso de generación de datos se basa en varios aspectos críticos:
 
@@ -45,23 +45,23 @@ La elección de este proceso de generación de datos se basa en varios aspectos 
 
 *Este modelo generativo estocástico ofrece una manera robusta de simular señales EEG realistas, proporcionando una base sólida para llevar a cabo experimentos controlados y análisis detallados de las diferencias entre poblaciones de jóvenes adultos y mayores.*
 
-## Utilización de Deep Learning para la Generación de Señales EEG
+### Utilización de Deep Learning para la Generación de Señales EEG
 
 La generación de señales EEG multivariantes a través de técnicas de deep learning ha ganado atención en los últimos años debido a su capacidad para modelar la complejidad y la estructura temporal de las señales. Modelos como TimeGAN y cosci-GAN son ejemplos prominentes en este campo.
 
-### TimeGAN
+#### TimeGAN
 
 [TimeGAN](https://proceedings.neurips.cc/paper_files/paper/2019/file/c9efe5f26cd17ba6216bbe2a7d26d490-Paper.pdf) (Time-series Generative Adversarial Network) es un modelo avanzado que combina las capacidades de los modelos generativos adversariales (GAN) con la estructura temporal inherente a las series de tiempo. Este modelo no solo se enfoca en generar datos realistas, sino que también mantiene la coherencia temporal de las señales, lo cual es crucial para los datos EEG.
 
-### cosci.GAN
+#### cosci.GAN
 
 [cosci.GAN](https://openreview.net/pdf?id=RP1CtZhEmR) es otro ejemplo de aplicación de GANs para la generación de señales temporales multiovariantes. Este modelo ha demostrado ser efectivo en la generación de datos complejos y multivariantes, como las señales EEG, al capturar la dinámica temporal y la interacción entre múltiples canales.
 
-### Eficacia y Limitaciones
+#### Eficacia y Limitaciones
 
 Aunque estos métodos basados en deep learning han mostrado resultados prometedores, su implementación y entrenamiento pueden ser computacionalmente intensivos y requieren grandes volúmenes de datos para lograr un rendimiento óptimo. Además, la interpretación de los modelos generados y la garantía de su realismo sigue siendo un desafío.
 
-## Justificación del Proceso Utilizado Frente al Uso de TimeGAN o cosci.GAN
+### Justificación del Proceso Utilizado Frente al Uso de TimeGAN o cosci.GAN
 
 Aunque los métodos de deep learning como TimeGAN y cosci.GAN tienen el potencial de generar señales EEG multivariantes realistas, hemos optado por un modelo generativo estocástico por varias razones:
 

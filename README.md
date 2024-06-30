@@ -76,7 +76,34 @@ En resumen, aunque los modelos de deep learning como TimeGAN y cosci.GAN son her
 # Evaluación con Datos Reales
 
 Después de implementar y probar el modelo con datos sintéticos, se probó con un banco de datos reales de diferentes sujetos. Por motivos de privacidad, estos datos reales no se han subido, pero se incluyen los notebooks y scripts utilizados para el procesamiento de dichos datos.
+Como no se añaden los datos raw orifinales, podriamos generar datos sintéticos con los canales que contienen los datos reales como son:
+## Todos los Canales
+```python
+all_channels = ['Fp1', 'AF7', 'AF3', 'F1', 'F3', 'F5',
+                'F7', 'FT7', 'FC5', 'FC3', 'FC1', 'C1',
+                'C3', 'C5', 'T7', 'TP7', 'CP5', 'CP3',
+                'CP1', 'P1', 'P3', 'P5', 'P7', 'P9',
+                'PO7', 'PO3', 'O1', 'Iz', 'Oz', 'POz',
+                'Pz', 'CPz', 'Fpz', 'Fp2', 'AF8', 'AF4',
+                'AFz', 'Fz', 'F2', 'F4', 'F6', 'F8',
+                'FT8', 'FC6', 'FC4', 'FC2', 'FCz', 'Cz',
+                'C2', 'C4', 'C6', 'T8', 'TP8', 'CP6', 'CP4',
+                'CP2', 'P2', 'P4', 'P6', 'P8', 'P10', 'PO8',
+                'PO4', 'O2', 'UP', 'DOWN', 'LEFT', 'RIGHT',
+                'EXG5', 'EXG6', 'EXG7', 'EXG8', 'Status']
 
+eeg_channels = ['Fp1', 'AF7', 'AF3', 'F1', 'F3', 'F5', 'F7', 'FT7',
+                'FC5', 'FC3', 'FC1', 'C1', 'C3', 'C5', 'T7', 'TP7',
+                'CP5', 'CP3', 'CP1', 'P1', 'P3', 'P5', 'P7', 'P9',
+                'PO7', 'PO3', 'O1', 'Iz', 'Oz', 'POz', 'Pz', 'CPz',
+                'Fpz', 'Fp2', 'AF8', 'AF4', 'AFz', 'Fz', 'F2', 'F4',
+                'F6', 'F8', 'FT8', 'FC6', 'FC4', 'FC2', 'FCz', 'Cz',
+                'C2', 'C4', 'C6', 'T8', 'TP8', 'CP6', 'CP4', 'CP2',
+                'P2', 'P4', 'P6', 'P8', 'P10', 'PO8', 'PO4', 'O2']
+
+eog_channels = ["UP", "DOWN", "LEFT","RIGHT"]
+exg_channels = ['EXG5', 'EXG6', 'EXG7', 'EXG8']
+```
 # Procesamiento de Señales EEG
 
 Las señales EEG procesadas en este proyecto permiten la reconstrucción y predicción de patrones temporales. Además, se utiliza tanto el aprendizaje supervisado como no supervisado para extraer características significativas y realizar la clasificación de sujetos.

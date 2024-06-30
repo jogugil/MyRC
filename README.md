@@ -108,7 +108,12 @@ exg_channels = ['EXG5', 'EXG6', 'EXG7', 'EXG8']
 
 Las señales EEG procesadas en este proyecto permiten la reconstrucción y predicción de patrones temporales. Además, se utiliza tanto el aprendizaje supervisado como no supervisado para extraer características significativas y realizar la clasificación de sujetos.
 
-Como preprocesamiento de los datos aplicamos un filtro paso banda que mantenga las frecuencias de las ondas cerebrales (0.2-30)Khz, dejando fuera las ondas Gamma que llegan hasta 100Khz. Despues del filtrado que permite eliminar ruido y artefactos de alta frecuencia, además de los artefactos asociados a la corriente eléctrica (50khz y sus armónicos), podemos aplicar un proceso de eliminación de artefactos mediante un modelo ICA: 
+Como preprocesamiento de los datos aplicamos un filtro paso banda que mantenga las frecuencias de las ondas cerebrales (0.2-30)Khz, dejando fuera las ondas Gamma que llegan hasta 100Khz. 
+
+![image](https://github.com/jogugil/MyRC/assets/15160072/16efe94c-a71b-486e-a973-7c53004b8168)
+
+
+Despues del filtrado que permite eliminar ruido y artefactos de alta frecuencia, además de los artefactos asociados a la corriente eléctrica (50khz y sus armónicos), podemos aplicar un proceso de eliminación de artefactos mediante un modelo ICA: 
 
 #### Diagrama de Proceso para la Función `remove_ica_components_artifact`
 
@@ -132,15 +137,14 @@ La función `remove_ica_components_artifact` se utiliza para eliminar componente
 
 6. **Excluir Componentes ICA  mediante histograma**
    - Identificar componentes  ICA excluyendo los componentes cuya densidad del histograma de amplitudes no se aproxima a una normal. Se ha estudiado que este tipo de señales mantiene una distribución normal. Los componentes que no mantienen esta distribución son aquellas que aportan artefactos con picos de señal con amplitudes extradamente elevados.
-     
+     ![image](https://github.com/jogugil/MyRC/assets/15160072/41126ac3-db67-402b-8ff4-97a340745e92)
 
-7. **Actualizar Datos Filtrados**
-   - Actualiza `fraw` con los datos filtrados.
+![image](https://github.com/jogugil/MyRC/assets/15160072/d0a9fce4-eb93-463f-b9e1-ee9534341c55)
 
-8. **Devolver Datos Filtrados**
-   - Retorna los datos filtrados.
+7. **Actualizar Datos Filtrados y con limpieza de artefactos**
 
-Después de eliminar o no lso artefactos debemos crear una matriz tridimensional {número sujetos, tamaño señales, nñumero canales}. Creando series temporales multivariante por sujeto. Fijamos para todos los sujetos y canales el mismo tamaño de señal.
+
+Después de eliminar o no los artefactos (será algo opcional) debemos crear una matriz tridimensional {número sujetos, tamaño señales, nñumero canales}. Creando series temporales multivariante por sujeto. Fijamos para todos los sujetos y canales el mismo tamaño de señal.
 
 Y finalmente lo ideal es normalizar los datos bien mediante una estandarización o una normalización (min-max).
  
@@ -153,51 +157,47 @@ Se construyó una API configurada mediante un diccionario config. Este diccionar
 ## Ejemplo de Diccionario de Configuración para los hiperparámetros:
 
       config = {
-          'seed': 1,
-          'init_type':'orthogonal',
-          'init_std':0.01,
-          'init_mean':0,
-          'input_size':10,
-          'n_internal_units': 480,
-          'spectral_radius': 0.59,
-          'leak': 0.4,
-          'input_scaling':0.1,
-          'nonlinearity':'relu', # 'relu','tanh'
-          'connectivity': 0.6,
-          'noise_level': 0.1,
-          'n_drop': 100,
-          'washout':'init',
-          'use_input_bias':True,
-          'use_input_layer':True,
-          'use_output_bias':True,
-          'use_bias':True,
-          'readout_type': None,
-          'threshold':0.5,
-          'svm_kernel': 'linear',
-          'svm_gamma': 0.005,
-          'svm_C': 5.0,
-          'w_ridge': 5.0,
-          'num_epochs': 2000,
-          'mlp_layout': (10, 10),
-          'w_l2': 0.001,
-          'learning_rate':0.9,
-          'max_depth':12,
-          'n_estimators':100,
-          'min_samples_split':1,
-          'min_samples_leaf':1,
-          'random_state':1,
-          'w_ridge_embedding':1.0,
-          'mts_rep':'reservoir',
-          'bidir': True,
-          'circle': False,
-          'dimred_method': 'tenpca',
-          'n_dim': 44,
-          'plasticity_synaptic':'hebb', # 'hebb'.'oja', 'covariance'
-          'theta_m':0.01,
-          'plasticity_intrinsic':'excitability', # 'excitability', 'activation_function'
-          'new_activation_function':'tanh',
-          'excitability_factor':0.01,
-          'device': 'cpu'
+              'seed': 1,
+              'init_type': 'rand',
+              'init_std': 0.01,
+              'init_mean': 0,
+              'input_size': 17,
+              'input_scaling': 1.5,
+              'w_l2': 0.0005,
+              'n_internal_units': 170, #  700,
+              'spectral_radius': 0.85,
+              'leak': 0.65,
+              'nonlinearity': 'relu',
+              'connectivity': 0.35,
+              'noise_level': 0.1,
+              'n_drop': None,
+              'washout': 'init',
+              'bidir': False,
+              'dimred_method': 'tenpca',
+              'n_dim': 40,
+              'mts_rep': 'reservoir',
+              'w_ridge_embedding': 10.0,
+              'circle': False,
+              'plasticity_synaptic': None,
+              'theta_m': 0.01,
+              'plasticity_intrinsic': None,
+              'learning_rate': 0.9,
+              'new_activation_function': 'relu',
+              'excitability_factor': 0.01,
+              'use_input_bias': True,
+              'use_input_layer': True,
+              'readout_type': None,
+              'threshold': 0.5,
+              'svm_kernel': 'linear',
+              'svm_gamma': 0.005,
+              'svm_C': 5.0,
+              'w_ridge': 5.0,
+              'num_epochs': 2000,
+              'mlp_layout': (100, 100),
+              'mlp_batch_size': 32,
+              'mlp_learning_rate': 0.01,
+              'mlp_learning_rate_type': 'constant',
+              'device': 'cpu'
       }
 
 ## Comentarios sobre los Parámetros de Configuración

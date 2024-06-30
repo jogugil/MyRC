@@ -143,8 +143,7 @@ La función `remove_ica_components_artifact` se utiliza para eliminar componente
 
 7. **Actualizar Datos Filtrados y con limpieza de artefactos**
 
-
-Después de eliminar o no los artefactos (será algo opcional) debemos crear una matriz tridimensional {número sujetos, tamaño señales, nñumero canales}. Creando series temporales multivariante por sujeto. Fijamos para todos los sujetos y canales el mismo tamaño de señal.
+Después de eliminar o no los artefactos (será algo opcional) debemos crear una matriz tridimensional **{número sujetos, tamaño señales, nñumero canales}**. Creando series temporales multivariante por sujeto. Fijamos para todos los sujetos y canales el mismo tamaño de señal.
 
 Y finalmente lo ideal es normalizar los datos bien mediante una estandarización o una normalización (min-max).
  

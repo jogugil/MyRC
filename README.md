@@ -186,9 +186,26 @@ La función `remove_ica_components_artifact` se utiliza para eliminar componente
 
 Después de eliminar o no los artefactos (será algo opcional) debemos crear una matriz tridimensional **{número sujetos, tamaño señales, número canales}**. Creando series temporales multivariante por sujeto. Fijamos para todos los sujetos y canales el mismo tamaño de señal.
 
-### Segmentación de Datos i extracción de características
+### Segmentación de Datos y extracción de características
 
 En este proyecto se busca demostrar la robustez que posee el modelo de RC para las señales EEG. Tal que permite obtener patrones de la dinamica temporal de las señales EEG con los cuales poder distinguir entre EEG de jovenes adultos y Mayores. Pero damos la opción de realiar otro camino. En este camino se busca realizar una exracción de caracaterísticas de las señales, las cuales serán la entrada del RC ESN, Para la extracción de características, se realizará una segmentación de las señales temporales. Las señales EEG se segmentan en ventanas temporales para su análisis. Esta segmentación permite una mejor gestión de los datos y facilita la aplicación de técnicas de procesamiento y análisis posteriores.
+# Características basadas en MODWT
+
+| Característica                    | Propósito                                                                                 | Función                                                                                                                         | Capítulo/Página        |
+|-----------------------------------|-------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------|------------------------|
+| Transformada Wavelet (MODWT)      | Realiza una transformada wavelet de la señal EEG utilizando la biblioteca PyWavelets.     | Calcula la energía, el porcentaje de energía, la media y la desviación estándar de los coeficientes de escala y detalle en cada nivel de descomposición. Devuelve un DataFrame con las características extraídas de la transformada wavelet. | Capítulo 4 Página 80   |
+
+# Características Temporales y de Frecuencia
+
+| Característica                    | Propósito                                                                                 | Función                                                                                                                         |
+|-----------------------------------|-------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------|
+| Amplitud Pico a Pico              | Calcula la amplitud pico a pico de la señal EEG.                                           | Calcula la diferencia entre el valor máximo y mínimo de la señal en cada ventana de tiempo. Devuelve un DataFrame con las amplitudes pico a pico para cada canal.  |
+| Entropía                          | Calcula la entropía de la señal EEG.                                                       | Utiliza histogramas para calcular la entropía de Shannon, Renyi y Tsallis para cada ventana de tiempo. Devuelve un DataFrame con los valores de entropía para cada canal. |
+| Potencia Espectral Relativa (RSP) | Calcula el Relative Spectral Power (RSP) de la señal EEG.                                  | Divide la señal en sub-bandas de frecuencia y calcula la potencia espectral relativa en cada sub-banda. Devuelve un DataFrame con los valores de RSP y otros índices asociados como DSI, TSI y ASI. |
+| Parámetros de Hjorth              | Calcula los parámetros de Hjorth de la señal EEG.                                          | Calcula la actividad, movilidad, complejidad, sesgo y curtosis de la señal en cada ventana de tiempo. Devuelve un DataFrame con los parámetros de Hjorth para cada canal. |
+| Parámetros Armónicos              | Calcula los parámetros armónicos de la señal EEG.                                          | Divide la señal en sub-bandas de frecuencia y calcula la frecuencia central, ancho de banda y valor espectral en la frecuencia central para cada sub-banda. Devuelve un DataFrame con los parámetros armónicos para cada canal. |
+| Coeficientes Autoregresivos (AR)  | Calcula los coeficientes autoregresivos (AR) de la señal EEG.                              | Estima los coeficientes AR utilizando un modelo autoregresivo y devuelve la media y la desviación estándar de los coeficientes para cada ventana de tiempo. Devuelve un DataFrame con los coeficientes AR y sus estadísticas para cada canal. |
+| Percentiles                       | Calcula los percentiles de la señal EEG.                                                   | Calcula los percentiles 25, 50 y 75 para cada ventana de tiempo. Devuelve un DataFrame con los percentiles para cada canal.                                       |
 
 Y finalmente lo ideal es normalizar los datos bien mediante una estandarización o una normalización (min-max).
  

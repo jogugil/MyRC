@@ -71,7 +71,7 @@ Aunque los métodos de deep learning como TimeGAN y cosci.GAN tienen el potencia
 
 3. **Interpretabilidad**: Los modelos estocásticos permiten una mayor interpretabilidad de los resultados, ya que se puede rastrear y ajustar fácilmente cada componente del proceso de generación. Esto es particularmente útil para validar y ajustar las señales sintéticas de acuerdo a los conocimientos previos sobre las características de las señales EEG reales.
 
-En resumen, aunque los modelos de deep learning como TimeGAN y cosci.GAN son herramientas poderosas para la generación de datos, el enfoque estocástico seleccionado proporciona una solución más práctica y adecuada para los objetivos específicos de nuestro proyecto.
+Por ello, aunque los modelos de deep learning como TimeGAN y cosci.GAN son herramientas poderosas para la generación de datos, el enfoque estocástico seleccionado proporciona una solución más práctica y adecuada para los objetivos específicos de nuestro proyecto.
 
 # Evaluación con Datos Reales
 

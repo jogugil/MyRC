@@ -98,7 +98,7 @@ eeg_channels = ['Fp1', 'AF7', 'AF3', 'F1', 'F3', 'F5', 'F7', 'FT7',
 eog_channels = ["UP", "DOWN", "LEFT","RIGHT"]
 exg_channels = ['EXG5', 'EXG6', 'EXG7', 'EXG8']
 ```
-- La ***primera fase*** del proyecto fue el ***estudio de este tipo de señales EEG***.
+# La ***primera fase*** del proyecto fue el ***estudio de este tipo de señales EEG***.
 
 #### Características de las Señales EEG
 
@@ -134,7 +134,7 @@ Las ondas EEG tienen una distribución específica de energía que puede variar 
 * Las ondas delta se originan durante el sueño profundo.
 * La onda gamma es la más rápida y está relacionada con la conciencia y experiencias de meditación.
 
-- La **segunda fase** fue el  ***Procesamiento de Señales EEG***: Las señales EEG procesadas permiten la reconstrucción y predicción de patrones temporales. Además, se utiliza tanto el aprendizaje supervisado como no supervisado para extraer características significativas y realizar la clasificación de sujetos.
+# La **segunda fase** fue el  ***Procesamiento de Señales EEG***: Las señales EEG procesadas permiten la reconstrucción y predicción de patrones temporales. Además, se utiliza tanto el aprendizaje supervisado como no supervisado para extraer características significativas y realizar la clasificación de sujetos.
 
 
 #### Preprocesamiento de Señales EEG

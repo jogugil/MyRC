@@ -108,6 +108,59 @@ exg_channels = ['EXG5', 'EXG6', 'EXG7', 'EXG8']
 
 Las señales EEG procesadas en este proyecto permiten la reconstrucción y predicción de patrones temporales. Además, se utiliza tanto el aprendizaje supervisado como no supervisado para extraer características significativas y realizar la clasificación de sujetos.
 
+Como preprocesamiento de los datos aplicamos un filtro paso banda que mantenga las frecuencias de las ondas cerebrales (0.2-30)Khz, dejando fuera las ondas Gamma que llegan hasta 100Khz. Despues del filtrado que permite eliminar ruido y artefactos de alta frecuencia, además de los artefactos asociados a la corriente eléctrica (50khz y sus armónicos), podemos aplicar un proceso de eliminación de artefactos mediante un modelo ICA: 
+# Diagrama de Proceso para la Función `remove_ica_components_artifact`
+
+## Descripción General
+
+La función `remove_ica_components_artifact` se utiliza para eliminar componentes ICA identificados como artefactos en datos EEG. A continuación se detalla el proceso paso a paso.
+
+## Pasos del Proceso
+
+1. **Copiar Datos EEG**
+   - Si `get_fraw()` es `None`, copia los datos originales de `get_raw()`.
+   - Si `get_fraw()` no es `None`, copia estos datos.
+
+2. **Inicializar ICA**
+   - Inicializa el objeto ICA con `random_state = 42`.
+
+3. **Ajustar ICA a los Datos**
+   - Ajusta ICA a los datos copiados.
+
+4. **Aplicar ICA y Rechazar Segmentos**
+   - Llama a `_apply_ica_and_reject_segments` para detectar y excluir componentes ICA con artefactos.
+
+5. **Detectar y Excluir Componentes ICA de Alta Varianza**
+   - Llama a `_detect_and_exclude_high_variance_ica` para identificar componentes ICA con alta varianza, amplitud y picos altos.
+
+6. **Excluir Componentes ICA Identificados**
+   - Combina los índices de componentes identificados como artefactos en los pasos anteriores.
+   - Aplica ICA excluyendo estos componentes.
+
+7. **Actualizar Datos Filtrados**
+   - Actualiza `fraw` con los datos filtrados.
+
+8. **Devolver Datos Filtrados**
+   - Retorna los datos filtrados.
+
+## Diagrama de Flujo
+
+```mermaid
+graph TD;
+    A[Iniciar Función] --> B[Copiar Datos EEG]
+    B --> C{get_fraw() es None?}
+    C -->|Sí| D[Copiar desde get_raw()]
+    C -->|No| E[Copiar desde get_fraw()]
+    D --> F[Inicializar ICA]
+    E --> F[Inicializar ICA]
+    F --> G[Ajustar ICA a los Datos]
+    G --> H[Aplicar ICA y Rechazar Segmentos]
+    H --> I[Detectar y Excluir Componentes de Alta Varianza]
+    I --> J[Combinar Índices de Artefactos]
+    J --> K[Aplicar ICA Excluyendo Componentes]
+    K --> L[Actualizar Datos Filtrados]
+    L --> M[Devolver Datos Filtrados]
+```
 # API Construida
 
 Se construyó una API configurada mediante un diccionario config. Este diccionario contiene diferentes parámetros que se transforman en hiperparámetros para el modelo, permitiendo una fácil personalización y ajuste del modelo a diferentes necesidades experimentales.

@@ -10,6 +10,68 @@ Este proyecto implementa un modelo de Reservoir Computing Echo State Network (ES
 # Generación de Datos Sintéticos
 
 Para llevar a cabo los experimentos, primero generamos datos sintéticos que simulan los EEG de diferentes sujetos, creando dos poblaciones distintas: una de jóvenes adultos y otra de mayores. Se consideraron las ondas cerebrales típicas en este tipo de señales, diferenciando su magnitud frecuencial y amplitud según sea un joven adulto o una persona mayor.
+# Generación de Datos Sintéticos
+
+Para llevar a cabo los experimentos, primero generamos datos sintéticos que simulan los EEG de diferentes sujetos, creando dos poblaciones distintas: una de jóvenes adultos y otra de mayores. La generación de estos datos se basa en modelos estocásticos y técnicas de simulación que permiten reproducir características clave de las señales EEG reales.
+
+## Modelo Generativo Estocástico
+
+El proceso de generación de datos sintéticos de EEG que se ha utilizado (función 'generate_synthetic_eeg_data' del módulo 'eeg.py') sigue los siguientes pasos clave:
+
+1. **Bandas de Frecuencia**: Se simulan las cinco bandas de frecuencia típicas de las señales EEG: Delta (0.5-4 Hz), Theta (4-8 Hz), Alpha (8-13 Hz), Beta (13-30 Hz) y Gamma (30-100 Hz). Cada banda tiene diferentes implicaciones neurológicas y se comporta de manera distinta en sujetos jóvenes versus mayores.
+
+2. **Diferencias entre Grupos**: Para diferenciar las señales de los jóvenes y los mayores, se asignan características específicas a cada grupo:
+    - **Sujetos Jóvenes**: Estos sujetos muestran un pico de amplitud en la banda Beta, lo cual se asocia con una mayor actividad cognitiva y vigilia. Las señales tienen mayor amplitud y menos ruido.
+    - **Sujetos Mayores**: En contraste, las señales de los mayores son de menor amplitud y presentan más ruido, reflejando la disminución en la actividad cerebral y el incremento de la variabilidad neuronal con la edad.
+
+3. **Dinámica Temporal**:
+    - **Proceso Autoregresivo**: Para capturar la naturaleza temporal de las señales EEG, se agrega un proceso autoregresivo. Este modelo ayuda a imitar las dependencias temporales presentes en las señales EEG reales.
+    - **Proceso Gaussiano**: Además, se incorpora un proceso gaussiano para introducir variabilidad adicional y complejidad en las señales, ayudando a simular condiciones más realistas.
+
+4. **Interacción entre Canales**:
+    - Las señales EEG son multivariantes y presentan interacciones entre diferentes canales (electrodos). Para simular esto, las señales generadas para cada canal incluyen componentes de ruido y variabilidad compartida, reflejando la correlación natural entre diferentes regiones del cerebro.
+
+5. **Ruido Gaussiano**: Finalmente, se añade ruido gaussiano a las señales para imitar las condiciones de grabación reales, donde siempre existe una cierta cantidad de ruido de fondo.
+
+## Justificación del Proceso
+
+La elección de este proceso de generación de datos se basa en varios aspectos críticos:
+
+- **Realismo**: Al incorporar bandas de frecuencia específicas, procesos autoregresivos y gaussianos, y ruido gaussiano, se busca que las señales sintéticas sean lo más realistas posible, permitiendo que los experimentos y análisis realizados sobre estos datos sean relevantes y aplicables a señales EEG reales.
+
+- **Diferenciación entre Grupos**: Las diferencias claras entre las señales de los jóvenes y los mayores permiten estudiar y validar técnicas de clasificación y análisis, asegurando que las características distintivas de cada grupo sean detectables y medibles.
+
+- **Simulación Completa**: La inclusión de dinámicas temporales y la interacción entre canales asegura que las señales generadas no solo sean realistas en términos de frecuencia y amplitud, sino también en su comportamiento temporal y multicanal, lo cual es crucial para cualquier análisis de EEG.
+
+*Este modelo generativo estocástico ofrece una manera robusta de simular señales EEG realistas, proporcionando una base sólida para llevar a cabo experimentos controlados y análisis detallados de las diferencias entre poblaciones de jóvenes adultos y mayores.*
+
+## Utilización de Deep Learning para la Generación de Señales EEG
+
+La generación de señales EEG multivariantes a través de técnicas de deep learning ha ganado atención en los últimos años debido a su capacidad para modelar la complejidad y la estructura temporal de las señales. Modelos como TimeGAN y cosci-GAN son ejemplos prominentes en este campo.
+
+### TimeGAN
+
+[TimeGAN](https://proceedings.neurips.cc/paper_files/paper/2019/file/c9efe5f26cd17ba6216bbe2a7d26d490-Paper.pdf) (Time-series Generative Adversarial Network) es un modelo avanzado que combina las capacidades de los modelos generativos adversariales (GAN) con la estructura temporal inherente a las series de tiempo. Este modelo no solo se enfoca en generar datos realistas, sino que también mantiene la coherencia temporal de las señales, lo cual es crucial para los datos EEG.
+
+### cosci.GAN
+
+[cosci.GAN](https://openreview.net/pdf?id=RP1CtZhEmR) es otro ejemplo de aplicación de GANs para la generación de señales temporales multiovariantes. Este modelo ha demostrado ser efectivo en la generación de datos complejos y multivariantes, como las señales EEG, al capturar la dinámica temporal y la interacción entre múltiples canales.
+
+### Eficacia y Limitaciones
+
+Aunque estos métodos basados en deep learning han mostrado resultados prometedores, su implementación y entrenamiento pueden ser computacionalmente intensivos y requieren grandes volúmenes de datos para lograr un rendimiento óptimo. Además, la interpretación de los modelos generados y la garantía de su realismo sigue siendo un desafío.
+
+## Justificación del Proceso Utilizado Frente al Uso de TimeGAN o cosci.GAN
+
+Aunque los métodos de deep learning como TimeGAN y cosci.GAN tienen el potencial de generar señales EEG multivariantes realistas, hemos optado por un modelo generativo estocástico por varias razones:
+
+1. **Simplicidad y Eficiencia**: El modelo estocástico utilizado es más sencillo y menos exigente computacionalmente en comparación con los métodos de deep learning. Esto permite una generación de datos más rápida y accesible sin la necesidad de grandes infraestructuras de cómputo.
+
+2. **Objetivo del Proyecto**: El objetivo principal del proyecto es el uso de Reservoir Computing para la obtención de la dinámica temporal de las señales y los patrones distintivos entre jóvenes adultos y mayores en reposo. El modelo generativo estocástico nos proporciona un control más directo sobre las características de las señales generadas, asegurando que las diferencias entre los grupos sean claramente definidas y mensurables.
+
+3. **Interpretabilidad**: Los modelos estocásticos permiten una mayor interpretabilidad de los resultados, ya que se puede rastrear y ajustar fácilmente cada componente del proceso de generación. Esto es particularmente útil para validar y ajustar las señales sintéticas de acuerdo a los conocimientos previos sobre las características de las señales EEG reales.
+
+En resumen, aunque los modelos de deep learning como TimeGAN y cosci.GAN son herramientas poderosas para la generación de datos, el enfoque estocástico seleccionado proporciona una solución más práctica y adecuada para los objetivos específicos de nuestro proyecto.
 
 # Evaluación con Datos Reales
 

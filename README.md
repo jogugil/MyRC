@@ -134,7 +134,9 @@ Las ondas EEG tienen una distribución específica de energía que puede variar 
 * Las ondas delta se originan durante el sueño profundo.
 * La onda gamma es la más rápida y está relacionada con la conciencia y experiencias de meditación.
 
-# La **segunda fase** fue el  ***Procesamiento de Señales EEG***: Las señales EEG procesadas permiten la reconstrucción y predicción de patrones temporales. Además, se utiliza tanto el aprendizaje supervisado como no supervisado para extraer características significativas y realizar la clasificación de sujetos.
+# La **segunda fase** fue el  ***Procesamiento de Señales EEG***: 
+
+Las señales EEG procesadas permiten la reconstrucción y predicción de patrones temporales. Además, se utiliza tanto el aprendizaje supervisado como no supervisado para extraer características significativas y realizar la clasificación de sujetos.
 
 
 #### Preprocesamiento de Señales EEG

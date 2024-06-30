@@ -140,25 +140,6 @@ La función `remove_ica_components_artifact` se utiliza para eliminar componente
 8. **Devolver Datos Filtrados**
    - Retorna los datos filtrados.
 
-#### Diagrama de Flujo
-
-```mermaid
-graph TD;
-    A[Iniciar Función] --> B[Copiar Datos EEG]
-    B --> C{get_fraw() es None?}
-    C -->|Sí| D[Copiar desde get_raw()]
-    C -->|No| E[Copiar desde get_fraw()]
-    D --> F[Inicializar ICA]
-    E --> F[Inicializar ICA]
-    F --> G[Ajustar ICA a los Datos]
-    G --> H[Aplicar ICA y Rechazar Segmentos]
-    H --> I[Detectar y Excluir Componentes de Alta Varianza]
-    I --> J[Combinar Índices de Artefactos]
-    J --> K[Aplicar ICA Excluyendo Componentes]
-    K --> L[Actualizar Datos Filtrados]
-    L --> M[Devolver Datos Filtrados]
-
-
 Después de eliminar o no lso artefactos debemos crear una matriz tridimensional {número sujetos, tamaño señales, nñumero canales}. Creando series temporales multivariante por sujeto. Fijamos para todos los sujetos y canales el mismo tamaño de señal.
 
 Y finalmente lo ideal es normalizar los datos bien mediante una estandarización o una normalización (min-max).

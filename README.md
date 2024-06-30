@@ -138,7 +138,6 @@ Las ondas EEG tienen una distribución específica de energía que puede variar 
 
 Las señales EEG procesadas permiten la reconstrucción y predicción de patrones temporales. Además, se utiliza tanto el aprendizaje supervisado como no supervisado para extraer características significativas y realizar la clasificación de sujetos.
 
-
 #### Preprocesamiento de Señales EEG
 
 Las señales EEG proporcionadas están en su forma cruda, lo que requiere un preprocesamiento antes de su análisis. Este preprocesamiento incluye varias etapas esenciales para asegurar la calidad y usabilidad de los datos:
@@ -158,8 +157,6 @@ Despues del filtrado que permite eliminar ruido y artefactos de alta frecuencia,
 Los artefactos en las señales EEG, como los movimientos oculares y la actividad muscular, deben ser identificados y eliminados. Para esto, se puede utilizar la librería MNE-Python, que proporciona herramientas avanzadas para la detección y eliminación de artefactos mediante técnicas como el Análisis de Componentes Independientes (ICA).
 
 ![imagen](https://github.com/jogugil/MyRC/assets/15160072/715a2b6b-d36f-4021-b083-5def6ae65973)
-
-#### Diagrama de Proceso para la Función `remove_ica_components_artifact`
 
 ##### Descripción General
 

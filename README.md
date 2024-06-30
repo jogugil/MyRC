@@ -1,15 +1,9 @@
 # MyRC And MyESN Project (Reservoir Computing ESN)
 
-
 Este proyecto implementa un modelo de Reservoir Computing Echo State Network (ESN) para su estudio e implementación. Se ha creado una API para evaluar el uso de este modelo en el procesamiento de señales temporales presentes en los canales de un EEG. El objetivo es la reconstrucción y predicción de señales, la obtención no supervisada de estados neuronales, y la clasificación de tipos de sujetos según los patrones de la dinámica temporal que conserva el estado final del RC para cada sujeto. En concreto, procesamos diferentes sujetos que se clasifican en jóvenes adultos y mayores.
 
 ![imagen](https://github.com/jogugil/MyRC/assets/15160072/63c28d95-1af2-46b4-87f2-736ee564df76)
 
- 
-
-# Generación de Datos Sintéticos
-
-Para llevar a cabo los experimentos, primero generamos datos sintéticos que simulan los EEG de diferentes sujetos, creando dos poblaciones distintas: una de jóvenes adultos y otra de mayores. Se consideraron las ondas cerebrales típicas en este tipo de señales, diferenciando su magnitud frecuencial y amplitud según sea un joven adulto o una persona mayor.
 # Generación de Datos Sintéticos
 
 Para llevar a cabo los experimentos, primero generamos datos sintéticos que simulan los EEG de diferentes sujetos, creando dos poblaciones distintas: una de jóvenes adultos y otra de mayores. La generación de estos datos se basa en modelos estocásticos y técnicas de simulación que permiten reproducir características clave de las señales EEG reales.
@@ -104,16 +98,64 @@ eeg_channels = ['Fp1', 'AF7', 'AF3', 'F1', 'F3', 'F5', 'F7', 'FT7',
 eog_channels = ["UP", "DOWN", "LEFT","RIGHT"]
 exg_channels = ['EXG5', 'EXG6', 'EXG7', 'EXG8']
 ```
-# Procesamiento de Señales EEG
+- La ***primera fase*** del proyecto fue el ***estudio de este tipo de señales EEG***.
 
-Las señales EEG procesadas en este proyecto permiten la reconstrucción y predicción de patrones temporales. Además, se utiliza tanto el aprendizaje supervisado como no supervisado para extraer características significativas y realizar la clasificación de sujetos.
+#### Características de las Señales EEG
+
+Las señales de electroencefalografía (EEG) son una representación directa de la actividad eléctrica del cerebro. Estas señales se generan principalmente por los potenciales postsinápticos de las neuronas piramidales en la corteza cerebral, que crean campos eléctricos detectables en el cuero cabelludo. El EEG es una herramienta no invasiva que permite registrar estas señales a través de electrodos colocados en la superficie del cuero cabelludo. 
+
+![imagen](https://github.com/jogugil/MyRC/assets/15160072/64fd9a4a-99d1-4904-a285-3c9548122e8a)
+
+
+Las señales EEG se forman mediante la superposición de múltiples corrientes sinápticas generadas por la actividad sincronizada de grandes poblaciones neuronales. Las corrientes sinápticas crean dipolos eléctricos cuyos campos se suman y pueden ser detectados a nivel macroelectrodo. La amplitud y frecuencia de las ondas EEG reflejan la dinámica de la actividad neuronal subyacente.
+
+Las ondas EEG se clasifican en varios tipos, cada una con características de frecuencia y amplitud específicas:
+
+* **Ondas Delta (0.5-4 Hz):** Predominan durante el sueño profundo y están asociadas con actividades regenerativas del cerebro.
+* **Ondas Theta (4-8 Hz):** Comunes en estados de somnolencia, meditación y etapas tempranas del sueño. También se observan durante tareas de memoria y aprendizaje.
+* **Ondas Alfa (8-12 Hz):** Asociadas con estados de relajación y alerta tranquila. Se generan principalmente en las regiones occipitales durante la vigilia relajada con los ojos cerrados.
+* **Ondas Beta (12-30 Hz):** Relacionadas con la actividad mental activa, atención y procesamiento de información. Se observan en estados de alerta y concentración.
+* **Ondas Gamma (30-100 Hz):** Asociadas con el procesamiento de información de alto nivel, la percepción consciente y la integración de diferentes modalidades sensoriales.
+
+El análisis de las señales EEG permite identificar distintos tipos de ondas cerebrales, cada una asociada con diferentes estados mentales y actividades. Estas ondas se clasifican según sus frecuencias y características específicas, proporcionando información valiosa sobre la actividad cerebral:
+
+* **Ondas Delta (1-5 Hz):** Asociadas con el sueño profundo y son predominantes en bebés.
+* **Ondas Theta (4-7 Hz):** Asociadas con creatividad y espontaneidad, pero también con distracción, ensoñaciones, depresión y otros trastornos emocionales. Los niños presentan amplitudes de ondas Theta mayores que los adultos.
+* **Ondas Alfa (8-12 Hz):** Relacionadas con la meditación y la sensación de calma interior. Son prominentes en las áreas posteriores del cerebro; sin embargo, su predominio en las zonas frontales puede indicar TDA-H, depresión y otros trastornos.
+* **Ondas Beta (13-21 Hz):** Comprenden la actividad de ondas rápidas y se asocian con concentración, orientación hacia el exterior o estados de reflexión. Las frecuencias dominantes de Beta son mayores en adultos que en niños, con máxima amplitud normalmente en regiones frontales del cerebro.
+* **Ondas Hi-Beta o Beta rápida (20-32 Hz):** Asociadas con la actividad cognitiva (resolver problemas, estudiar), pero también con preocupaciones, ansiedad y obsesiones.
+
+Las ondas EEG tienen una distribución específica de energía que puede variar según el estado mental y las actividades del individuo:
+
+* Valores altos de onda delta junto con valores bajos en otras bandas de frecuencia pueden indicar un estado de reposo o sueño, mientras que una distribución más equilibrada de energía entre diferentes bandas podría indicar actividad mental.
+* La onda alfa está relacionada con la falta de actividad cerebral y se genera durante el descanso, meditación o paseos.
+* Las ondas beta se generan cuando el cerebro está activo y concentrado en actividades mentales, como durante conversaciones intensas, debates o enseñanza.
+* Las ondas theta surgen cuando un individuo está tan relajado que comienza a soñar despierto, como durante actividades automáticas como conducir o ducharse.
+* Las ondas delta se originan durante el sueño profundo.
+* La onda gamma es la más rápida y está relacionada con la conciencia y experiencias de meditación.
+
+- La **segunda fase** fue el  ***Procesamiento de Señales EEG***: Las señales EEG procesadas permiten la reconstrucción y predicción de patrones temporales. Además, se utiliza tanto el aprendizaje supervisado como no supervisado para extraer características significativas y realizar la clasificación de sujetos.
+
+
+#### Preprocesamiento de Señales EEG
+
+Las señales EEG proporcionadas están en su forma cruda, lo que requiere un preprocesamiento antes de su análisis. Este preprocesamiento incluye varias etapas esenciales para asegurar la calidad y usabilidad de los datos:
+
+##### Filtrado de Datos
+
+Las señales EEG son inherentemente ruidosas, por lo que se debe aplicar un filtrado para eliminar el ruido de alta y baja frecuencia no deseado. Esto puede incluir el uso de filtros pasa banda para mantener las frecuencias de interés y eliminar artefactos de frecuencia fuera del rango típico de la actividad cerebral.
 
 Como preprocesamiento de los datos aplicamos un filtro paso banda que mantenga las frecuencias de las ondas cerebrales (0.2-30)Khz, dejando fuera las ondas Gamma que llegan hasta 100Khz. 
 
 ![image](https://github.com/jogugil/MyRC/assets/15160072/16efe94c-a71b-486e-a973-7c53004b8168)
 
+Despues del filtrado que permite eliminar ruido y artefactos de alta frecuencia, además de los artefactos asociados a la corriente eléctrica (50khz y sus armónicos), podemos aplicar un proceso de eliminación de artefactos mediante un modelo ICA.
 
-Despues del filtrado que permite eliminar ruido y artefactos de alta frecuencia, además de los artefactos asociados a la corriente eléctrica (50khz y sus armónicos), podemos aplicar un proceso de eliminación de artefactos mediante un modelo ICA: 
+##### Eliminación de Artefactos
+
+Los artefactos en las señales EEG, como los movimientos oculares y la actividad muscular, deben ser identificados y eliminados. Para esto, se puede utilizar la librería MNE-Python, que proporciona herramientas avanzadas para la detección y eliminación de artefactos mediante técnicas como el Análisis de Componentes Independientes (ICA).
+
+![imagen](https://github.com/jogugil/MyRC/assets/15160072/715a2b6b-d36f-4021-b083-5def6ae65973)
 
 #### Diagrama de Proceso para la Función `remove_ica_components_artifact`
 
@@ -144,6 +186,10 @@ La función `remove_ica_components_artifact` se utiliza para eliminar componente
 7. **Actualizar Datos Filtrados y con limpieza de artefactos**
 
 Después de eliminar o no los artefactos (será algo opcional) debemos crear una matriz tridimensional **{número sujetos, tamaño señales, número canales}**. Creando series temporales multivariante por sujeto. Fijamos para todos los sujetos y canales el mismo tamaño de señal.
+
+### Segmentación de Datos i extracción de características
+
+En este proyecto se busca demostrar la robustez que posee el modelo de RC para las señales EEG. Tal que permite obtener patrones de la dinamica temporal de las señales EEG con los cuales poder distinguir entre EEG de jovenes adultos y Mayores. Pero damos la opción de realiar otro camino. En este camino se busca realizar una exracción de caracaterísticas de las señales, las cuales serán la entrada del RC ESN, Para la extracción de características, se realizará una segmentación de las señales temporales. Las señales EEG se segmentan en ventanas temporales para su análisis. Esta segmentación permite una mejor gestión de los datos y facilita la aplicación de técnicas de procesamiento y análisis posteriores.
 
 Y finalmente lo ideal es normalizar los datos bien mediante una estandarización o una normalización (min-max).
  
@@ -297,59 +343,6 @@ Puedes utilizar tanto el código que hay en los notebooks como los diferentes sc
 Para ejecutar la evaluación, usa el siguiente comando:
 
 
-## Características de las Señales EEG
-
-Las señales de electroencefalografía (EEG) son una representación directa de la actividad eléctrica del cerebro. Estas señales se generan principalmente por los potenciales postsinápticos de las neuronas piramidales en la corteza cerebral, que crean campos eléctricos detectables en el cuero cabelludo. El EEG es una herramienta no invasiva que permite registrar estas señales a través de electrodos colocados en la superficie del cuero cabelludo. 
-
-![imagen](https://github.com/jogugil/MyRC/assets/15160072/64fd9a4a-99d1-4904-a285-3c9548122e8a)
-
-
-Las señales EEG se forman mediante la superposición de múltiples corrientes sinápticas generadas por la actividad sincronizada de grandes poblaciones neuronales. Las corrientes sinápticas crean dipolos eléctricos cuyos campos se suman y pueden ser detectados a nivel macroelectrodo. La amplitud y frecuencia de las ondas EEG reflejan la dinámica de la actividad neuronal subyacente.
-
-Las ondas EEG se clasifican en varios tipos, cada una con características de frecuencia y amplitud específicas:
-
-* **Ondas Delta (0.5-4 Hz):** Predominan durante el sueño profundo y están asociadas con actividades regenerativas del cerebro.
-* **Ondas Theta (4-8 Hz):** Comunes en estados de somnolencia, meditación y etapas tempranas del sueño. También se observan durante tareas de memoria y aprendizaje.
-* **Ondas Alfa (8-12 Hz):** Asociadas con estados de relajación y alerta tranquila. Se generan principalmente en las regiones occipitales durante la vigilia relajada con los ojos cerrados.
-* **Ondas Beta (12-30 Hz):** Relacionadas con la actividad mental activa, atención y procesamiento de información. Se observan en estados de alerta y concentración.
-* **Ondas Gamma (30-100 Hz):** Asociadas con el procesamiento de información de alto nivel, la percepción consciente y la integración de diferentes modalidades sensoriales.
-
-El análisis de las señales EEG permite identificar distintos tipos de ondas cerebrales, cada una asociada con diferentes estados mentales y actividades. Estas ondas se clasifican según sus frecuencias y características específicas, proporcionando información valiosa sobre la actividad cerebral:
-
-* **Ondas Delta (1-5 Hz):** Asociadas con el sueño profundo y son predominantes en bebés.
-* **Ondas Theta (4-7 Hz):** Asociadas con creatividad y espontaneidad, pero también con distracción, ensoñaciones, depresión y otros trastornos emocionales. Los niños presentan amplitudes de ondas Theta mayores que los adultos.
-* **Ondas Alfa (8-12 Hz):** Relacionadas con la meditación y la sensación de calma interior. Son prominentes en las áreas posteriores del cerebro; sin embargo, su predominio en las zonas frontales puede indicar TDA-H, depresión y otros trastornos.
-* **Ondas Beta (13-21 Hz):** Comprenden la actividad de ondas rápidas y se asocian con concentración, orientación hacia el exterior o estados de reflexión. Las frecuencias dominantes de Beta son mayores en adultos que en niños, con máxima amplitud normalmente en regiones frontales del cerebro.
-* **Ondas Hi-Beta o Beta rápida (20-32 Hz):** Asociadas con la actividad cognitiva (resolver problemas, estudiar), pero también con preocupaciones, ansiedad y obsesiones.
-
-Las ondas EEG tienen una distribución específica de energía que puede variar según el estado mental y las actividades del individuo:
-
-* Valores altos de onda delta junto con valores bajos en otras bandas de frecuencia pueden indicar un estado de reposo o sueño, mientras que una distribución más equilibrada de energía entre diferentes bandas podría indicar actividad mental.
-* La onda alfa está relacionada con la falta de actividad cerebral y se genera durante el descanso, meditación o paseos.
-* Las ondas beta se generan cuando el cerebro está activo y concentrado en actividades mentales, como durante conversaciones intensas, debates o enseñanza.
-* Las ondas theta surgen cuando un individuo está tan relajado que comienza a soñar despierto, como durante actividades automáticas como conducir o ducharse.
-* Las ondas delta se originan durante el sueño profundo.
-* La onda gamma es la más rápida y está relacionada con la conciencia y experiencias de meditación.
-
-
-## Preprocesamiento de Señales EEG
-
-Las señales EEG proporcionadas están en su forma cruda, lo que requiere un preprocesamiento antes de su análisis. Este preprocesamiento incluye varias etapas esenciales para asegurar la calidad y usabilidad de los datos:
-
-### Filtrado de Datos
-
-Las señales EEG son inherentemente ruidosas, por lo que se debe aplicar un filtrado para eliminar el ruido de alta y baja frecuencia no deseado. Esto puede incluir el uso de filtros pasa banda para mantener las frecuencias de interés y eliminar artefactos de frecuencia fuera del rango típico de la actividad cerebral.
-
-### Eliminación de Artefactos
-
-Los artefactos en las señales EEG, como los movimientos oculares y la actividad muscular, deben ser identificados y eliminados. Para esto, se puede utilizar la librería MNE-Python, que proporciona herramientas avanzadas para la detección y eliminación de artefactos mediante técnicas como el Análisis de Componentes Independientes (ICA).
-
-![imagen](https://github.com/jogugil/MyRC/assets/15160072/715a2b6b-d36f-4021-b083-5def6ae65973)
-
-
-### Segmentación de Datos
-
-Para el experimento donde el estudio se realiza a través de la extracción de características, se realizará una segmentación de las señales temporales. Las señales EEG se segmentan en ventanas temporales para su análisis. Esta segmentación permite una mejor gestión de los datos y facilita la aplicación de técnicas de procesamiento y análisis posteriores.
 
 # Reservoir Computing (RC)
 

@@ -91,12 +91,13 @@ El uso de un modelo de Reservoir Computing, como el ESN, puede ser efectivo para
                 * Con eliminación o sin eliminación de artefctos usando ICA.
                 * Ectracción o no de features.
             - Utilizaxión de algoritmos de búsqueda óptima de hiperparámetro:
-                * Algoritmo genetico mediante librería deap.
+                * Algoritmo genético mediante librería deap.
                 * Probabilidad bayesiana mediante librería 'optuna':
                         objective = create_objective (X, Y)
                         study     = optuna.create_study (direction = 'maximize')
                         study.optimize (objective, n_trials = 100)
                 * Probabilidad bayesiana mediante librería 'scikit-optimize' y función 'gp_minimize'
+                * Implementación ejemplo deep MyRC ESN sobre datos sintéticos.
     base/: librerias base donde seimplementa el modelo RC ESN y otra funciones auxiliares.
     README.md: Descripción del proyecto.EN CREACIÓN
     presentation/: Presentación del proyecto.EN CREACIÓN

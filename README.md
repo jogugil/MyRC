@@ -101,7 +101,7 @@ Además hay que tener en cuena que se debe instarlar torch, dependerá del siste
    
 # Uso
 
-Puedes utilizar tanto el código que hay en los notebooks como los diferentes scripts existentes. Modifica y crea tus propios notebook con apouo de los diferentes modulos desarrollados que contienen tanto el API del RC MSN como clases y funciones para el ttratamiento de este tipo de datos
+Puedes utilizar tanto el código que hay en los notebooks como los diferentes scripts existentes. Modifica y crea tus propios notebook con ayuda de los diferentes módulos desarrollados que contienen tanto el API del RC ESN como clases y funciones auxiliares para el tratamiento de este tipo de datos.
 
 # MyRC And MyESN Project (Reservoir Computing ESN)
 

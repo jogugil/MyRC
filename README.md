@@ -85,6 +85,18 @@ El uso de un modelo de Reservoir Computing, como el ESN, puede ser efectivo para
                 . Clustering y clasifiación por métodos no supervisados de los datos sinteticos EEG
                 . Clasificación por mñetodos supervisados de los datos sinteticos EEG
     data/: Carpeta con datos de prueba y entrenamiento.No se tienen por temas de privacidad.
+    scripts/:Notebooks y scripts de python para el prpcesamiento y tratamiento de las señales EEG en crudo. 
+            - Creación de datasets con la combinación de situaciones que se pueden dar:
+                * Frecuencia de corto para paso bajo y poroporción de remuetreo o decimación.       
+                * Con eliminación o sin eliminación de artefctos usando ICA.
+                * Ectracción o no de features.
+            - Utilizaxión de algoritmos de búsqueda óptima de hiperparámetro:
+                * Algoritmo genetico mediante librería deap.
+                * Probabilidad bayesiana mediante librería 'optuna':
+                        objective = create_objective (X, Y)
+                        study     = optuna.create_study (direction = 'maximize')
+                        study.optimize (objective, n_trials = 100)
+                * Probabilidad bayesiana mediante librería 'scikit-optimize' y función 'gp_minimize'
     base/: librerias base donde seimplementa el modelo RC ESN y otra funciones auxiliares.
     README.md: Descripción del proyecto.EN CREACIÓN
     presentation/: Presentación del proyecto.EN CREACIÓN

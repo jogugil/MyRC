@@ -259,8 +259,7 @@ class MyESN (nn.Module):
         else:
             self.device = torch.device("cpu")
             
-        torch.manual_seed (0)
-        np.random.seed (0)
+
         
         self.new_activations = None # inicializamos función activación en plasticidad
         
@@ -702,7 +701,7 @@ class MyRC:
         # Initialize readout type
         if self.readout_type is not None:
             if self.readout_type == 'lin': # Ridge regression
-                self.readout = Ridge (alpha = self.w_ridge)
+                self.readout = Ridge (alpha = self.w_ridge, random_state = 0)
             elif self.readout_type == 'svm': # SVM readout
                 self.readout = SVC (C=self.svm_C, kernel='precomputed')
             elif self.readout_type == 'ovr': # SVM readout
@@ -729,7 +728,7 @@ class MyRC:
         
         # Initialize ridge regression model
         if self.mts_rep == 'output' or self.mts_rep == 'reservoir':
-            self._ridge_embedding = Ridge (alpha = self.w_ridge_embedding, fit_intercept = True)
+            self._ridge_embedding = Ridge (alpha = self.w_ridge_embedding, fit_intercept = True, random_state = 0)
             
         # Initialize dimensionality reduction method
         if self.dimred_method is not None:
@@ -777,7 +776,6 @@ class MyRC:
             reservoir_state = self.model (input_sequence, reservoir_state, t)
             # print (f'* reservoir_state:{reservoir_state.size()}')
             
-
             rc_state [:,reservoir_index,:] = reservoir_state [:,t,:]
             reservoir_index += 1
             
@@ -838,12 +836,11 @@ class MyRC:
         n_drop             = 0
         transients_to_drop = None
         if not evaluate: # En fase de test o evaluación no se eliminan transitorios
-            n_drop = min (self.n_drop, input_data.size(1))
+            n_drop = min (self.n_drop, input_data.size(1) - 1)
             transients_to_drop = self._determine_transients_to_drop (n_drop, input_data.size (1)) 
         # ============ Buscamos el estado del RC al procesar la series tmeporales ============
         reservoir_state  = self._process_transient_ESN (input_data, transients_to_drop)
-        # print (f'* _get_states : reservoir_state : {reservoir_state.shape}')
-     
+        
         # print (f'* get_states : reservoir_state : {reservoir_state.shape}')
         # print (f'* get_states : birdir : {birdir}')
         # ============ Si activamos una estado bidireccional del estado interno del ESN ============
@@ -851,7 +848,7 @@ class MyRC:
             input_data_b       = torch.tensor(input_data.numpy () [:, ::-1, :].copy(), dtype = torch.float32)
             reservoir_state_b  = self._process_transient_ESN (input_data_b, transients_to_drop)
             
-            # print (f'* get_states : reservoir_state_b : {reservoir_state_b.shape}')
+            print (f'* get_states : reservoir_state_b : {reservoir_state_b.shape}')
             all_rc = np.concatenate((reservoir_state, reservoir_state_b), axis=1)
         else:
             all_rc = reservoir_state
@@ -1182,7 +1179,9 @@ class MyRC:
         elif self.mts_rep == 'mean':
             input_repr = np.mean (rc_dim_states, axis = 1)
         elif self.mts_rep == 'id':
-            input_repr = rc_dim_states
+            input_repr = rc_dim_states.reshape(rc_dim_states.shape[0], -1)
+        elif self.mts_rep == 'state':
+            input_repr = rc_state.reshape(rc_state.shape[0], -1)
         else:
             raise RuntimeError('Invalid representation ID: output, reservoir, last o mean')  
        # print (f'fit : input_repr:{input_repr.shape}')
@@ -1526,7 +1525,3 @@ def summary(model, input_size):
 
     print(f"Total de parámetros: {total_params}")
     print(f"Parámetros entrenables: {trainable_params}")
-
-# Ejemplo de uso:
-# Suponiendo que `model` es una instancia de nn.Module y `input_size` es el tamaño de entrada esperado
-# summary(model, input_size)

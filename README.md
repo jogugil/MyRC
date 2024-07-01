@@ -13,7 +13,7 @@ El objetivo de este estudio es procesar y analizar señales EEG de diferentes su
 ### 2. Preprocesamiento de Señales EEG
 - **Filtrado**: Aplicar un filtro de banda (ej. 0.2-30 Hz) para eliminar artefactos de baja y alta frecuencia.
 - **Corrección de Artefactos**: Utilización de técnicas como Independent Component Analysis (ICA) para eliminar artefactos de movimiento ocular y musculares.
-- **Segmentación**: Dividir las señales EEG en ventanas de tiempo (ej. 2 segundos con solapamiento del 50%).
+- **Segmentación**: Dividir las señales EEG en ventanas de tiempo (ej. epochs de mne de 3 segundos sin solapamiento). (sólo si se realiza extracción de caracterísricas)
 
 ### 3. Extracción de Características
 Se extraerán características tanto en el dominio del tiempo como en el dominio de la frecuencia para cada ventana de tiempo.

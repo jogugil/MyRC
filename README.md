@@ -66,13 +66,13 @@ Se extraerán características tanto en el dominio del tiempo como en el dominio
   - Utilización de métricas como precisión, sensibilidad, especificidad y área bajo la curva ROC (AUC-ROC).
 
 - **Identificación de Patrones**:
-  - Análisis de los patrones en la dinámica temporal de las señales EEG identificados por el ESN.
+  - Análisis de los patrones en la dinámica temporal de las señales EEG identificados por el ESN. Se utiliza la matriz de similitud para vomprobar los distintos patrones de cada sujeto.
   - Visualización de las características más relevantes que permiten la distinción entre los dos grupos.
 
 ## Conclusión
 El uso de un modelo de Reservoir Computing, como el ESN, puede ser efectivo para identificar patrones en la dinámica temporal de las señales EEG que distinguen entre jóvenes adultos y adultos mayores. Este enfoque combina técnicas avanzadas de procesamiento de señales y aprendizaje automático para proporcionar una herramienta poderosa en el análisis de EEG.
 
-## Referencias
+## Referencias (ver memoria asociada)
 - Literatura sobre técnicas de procesamiento de señales EEG.
 - Estudios previos que utilizan modelos de Reservoir Computing en análisis de señales temporales.
 - Documentación y ejemplos de implementación de Echo State Networks (ESN).
@@ -84,10 +84,11 @@ El uso de un modelo de Reservoir Computing, como el ESN, puede ser efectivo para
                 . Reconstrucciíon y predicción de señales temporales de los datos sintetigcos EEG
                 . Clustering y clasifiación por métodos no supervisados de los datos sinteticos EEG
                 . Clasificación por mñetodos supervisados de los datos sinteticos EEG
-    data/: Carpeta con datos de prueba y entrenamiento.No se tienen por temas de privacidad
+    data/: Carpeta con datos de prueba y entrenamiento.No se tienen por temas de privacidad.
     base/: librerias base donde seimplementa el modelo RC ESN y otra funciones auxiliares.
     README.md: Descripción del proyecto.EN CREACIÓN
     presentation/: Presentación del proyecto.EN CREACIÓN
+    memoria/: Memoria del proyecto. EN CREACIÓN
 
 # Instalación
 

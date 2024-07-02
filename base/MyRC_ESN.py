@@ -336,9 +336,9 @@ class MyESN (nn.Module):
         # o una combinación lineal con los pesos asociados a cada uno de los nodos internos
 
         if self.use_input_layer:
-            reservoir_input = self.input_layer(input_data)
+            reservoir_input = self.input_layer (input_data)
         else:
-            reservoir_input = torch.matmul(input_data, self.input_weights.to(self.device))
+            reservoir_input = torch.matmul (input_data, self.input_weights.to (self.device))
 
         # obtenemos el estado actual trasnmitiendo al información de entrada a los nodos
         # del RC atendiendo a la matriz de conectividad (reservoir_state)
@@ -346,7 +346,9 @@ class MyESN (nn.Module):
         if t > 0:
             current_rc_state = reservoir_state [:, (t-1), :]
         else:
-            current_rc_state = torch.zeros_like (reservoir_input).to(self.device)
+            # current_rc_state = torch.zeros_like (reservoir_input).to(self.device)
+            initial_state    = torch.ones_like (reservoir_input).to(self.device)
+            current_rc_state = torch.matmul (initial_state, self.reservoir_weights.to (self.device))
         
         # Esta multiplicación por la matriz de conexiones del reservorio no solo transmite
         # la información a los nodos vecinos, sino que también permite que la información
@@ -455,10 +457,14 @@ class MyESN (nn.Module):
         '''
         # Implementación de la plasticidad sináptica
         if self.plasticity_synaptic is not None:
-            if self.plasticity_synaptic == 'hebb':
+            if self.plasticity_synaptic == 'bcm':
                 # Regla de Hebb
                 # Obtener la activación de las neuronas en el reservorio
-                self._apply_bcm_rule (reservoir_state, t)
+                self._apply_synaptic_plasticity_bcm (input_data, reservoir_state, t)
+            elif self.plasticity_synaptic == 'hebb':
+                # Regla de Hebb
+                # Obtener la activación de las neuronas en el reservorio
+                self._apply_synaptic_plasticity_hebb (input_data, reservoir_state, t)
             elif self.plasticity_synaptic == 'covariance':
                 # Regla de Covarianza
                 # Obtener la activación de las neuronas en el reservorio
@@ -469,69 +475,114 @@ class MyESN (nn.Module):
                 self.reservoir_weights += self.learning_rate * covariance_matrix
             elif self.plasticity_synaptic == 'oja':
                 # Regla de Oja
-                self._apply_ojas_rule (reservoir_state, input_data, t)
+                self._apply_ojas_rule (input_data, reservoir_state,  t)
             else:
                 raise ValueError("Invalid synaptic plasticity rule.") 
 
-    def _apply_ojas_rule (self, reservoir_state, input_data, t):
-        '''
-            Aplica la regla de Oja para ajustar los pesos sinápticos del reservorio en el instante t.
-            
-            Funcionalidad:
-            
-            - Calcula la activación de las neuronas en el reservorio y la proyección de la entrada.
-            - Utiliza la diferencia entre la entrada y la proyección para ajustar los pesos según la regla de Oja.
-            
-            Parámetros:
-            - reservoir_state: Tensor con el estado del reservorio.
-            - input_data: Tensor con los datos de entrada.
-            - t: Instante de tiempo actual.
-        '''
+    def _apply_ojas_rule (self, input_data, reservoir_state, t):
+        """
+            La regla de Oja es una modificación de la regla de Hebb que incluye un término de normalización 
+            para evitar que los pesos crezcan sin límites. Implementar la plasticidad sináptica con la regla de Oja 
+            en tu sistema de Reservoir Computing puede ayudar a ajustar los pesos del reservorio durante el entrenamiento.
+        
+            Regla de Oja:
+            La regla de Oja se puede formular como:
+            Δw = η ⋅ (y ⋅ x - y² ⋅ w)
+        
+            donde:
+                Δw es el cambio en los pesos.
+                η es la tasa de aprendizaje.
+                y es la salida de la neurona (estado del reservorio después de la no linealidad).
+                x es la entrada de la neurona (estado del reservorio antes de la no linealidad).
+                w son los pesos sinápticos.
+        
+            Este método aplica la regla de Oja para actualizar los pesos del reservorio.
+        
+            Args:
+                input_data (torch.Tensor): Los datos de entrada al sistema.
+                reservoir_state (torch.Tensor): El estado del reservorio en todos los tiempos.
+                t (int): El tiempo actual del entrenamiento.
+        """
         # Obtener el estado actual del reservorio en el tiempo t
-        reservoir_state_t = reservoir_state [:, t, :]  # Dimensiones: (batch_size, reservoir_size)
+        current_rc_state = reservoir_state [:, t, :]  # Dimensiones: (batch_size, reservoir_size)
     
         # Calcular la activación de las neuronas en el reservorio en el tiempo t
-        activations = reservoir_state_t  # Dimensiones: (batch_size, reservoir_size)
-    
-        # Calcular la proyección de la entrada a través de los pesos del reservorio
-        projection = torch.matmul (input_data, self.reservoir_weights.t ().to (self.device)) # Dimensiones: (batch_size, reservoir_size)
-        # Calcular la diferencia entre la entrada y la proyección
-        difference = input_data - projection  # Dimensiones: (batch_size, reservoir_size)
-    
-        # Calcular el cambio en los pesos sinápticos utilizando la regla de Oja
-        # Nota: Usamos una versión de aprendizaje de Oja adecuada para batch processing
-        delta_weights = self.learning_rate * torch.bmm (activations.unsqueeze (2), difference.unsqueeze (1)).mean (dim = 0)
-    
+        # Calcular el cambio en los pesos según la regla de Oja
+        delta_w = self.learning_rate * (torch.matmul (current_rc_state.unsqueeze (2), current_rc_state.unsqueeze (1)) - \
+                                    torch.pow (current_rc_state.unsqueeze (2), 2) * self.reservoir_weights.unsqueeze (0))
+
         # Actualizar los pesos sinápticos del reservorio
-        self.reservoir_weights += delta_weights.to (self.device)
-
-    def _apply_bcm_rule (self, reservoir_state, t):
-        '''
-            Aplica la regla de BCM para ajustar los pesos sinápticos del reservorio en el instante t.
-            
-            Funcionalidad:
-            
-            - Calcula la activación promedio de las neuronas en el reservorio.
-            - Ajusta los pesos según la regla de BCM utilizando la activación promedio y el umbral de modificación.
-            
-            Parámetros:
-            - reservoir_state: Tensor con el estado del reservorio.
-            - t: Instante de tiempo actual.
-        '''
+        self.reservoir_weights += delta_w.mean (dim = 0)
+    def _apply_synaptic_plasticity_hebb(self, input_data, reservoir_state, t):
+        """
+            La regla de Hebb es un principio fundamental de la neurociencia que sugiere que las conexiones entre 
+            neuronas se fortalecen cuando ambas neuronas están activas simultáneamente. Implementar la plasticidad 
+            sináptica con la regla de Hebb en tu sistema de Reservoir Computing puede ayudar a ajustar los pesos 
+            del reservorio durante el entrenamiento.
+        
+            Regla de Hebb:
+            La regla de Hebb se puede formular como:
+            Δw = η ⋅ y ⋅ x
+        
+            donde:
+                Δw es el cambio en los pesos.
+                η es la tasa de aprendizaje.
+                y es la salida de la neurona (estado del reservorio después de la no linealidad).
+                x es la entrada de la neurona (estado del reservorio antes de la no linealidad).
+        
+            Este método aplica la regla de Hebb para actualizar los pesos del reservorio.
+        
+            Args:
+                input_data (torch.Tensor): Los datos de entrada al sistema.
+                reservoir_state (torch.Tensor): El estado del reservorio en todos los tiempos.
+                t (int): El tiempo actual del entrenamiento.
+        """
+        # Obtener el estado actual
+        current_rc_state = reservoir_state[:, t, :]
+    
+        # Calcular el cambio en los pesos según la regla de Hebb
+        delta_w = self.learning_rate * torch.matmul(current_rc_state.unsqueeze(2), current_rc_state.unsqueeze(1))
+    
+        # Actualizar los pesos del reservorio
+        self.reservoir_weights += delta_w.mean(dim=0)
+    def _apply_synaptic_plasticity_bcm (self, input_data, reservoir_state, t):
+        """
+            La regla BCM (Bienenstock, Cooper y Munro) es una extensión de la regla de Hebb que introduce un 
+            umbral de plasticidad dependiente de la actividad promedio de la neurona. Esta regla puede ser 
+            más estable y capaz de captar dependencias temporales en los datos.
+        
+            Regla BCM:
+            La regla BCM se puede formular como:
+            Δw = η ⋅ (avg_activation ⋅ avg_activation - θ_m ⋅ w²)
+        
+            donde:
+                Δw es el cambio en los pesos.
+                η es la tasa de aprendizaje.
+                avg_activation es la activación promedio de la neurona.
+                θ_m es el umbral de modificación.
+                w son los pesos sinápticos.
+        
+            Este método aplica la regla BCM para actualizar los pesos del reservorio.
+        
+            Args:
+                input_data (torch.Tensor): Los datos de entrada al sistema.
+                reservoir_state (torch.Tensor): El estado del reservorio en todos los tiempos.
+                t (int): El tiempo actual del entrenamiento.
+        """
         # Obtener el estado actual del reservorio en el tiempo t
-        reservoir_state_t = reservoir_state [:, t, :]
-
+        reservoir_state_t = reservoir_state[:, t, :]
+    
         # Calcular la activación promedio de las neuronas en el reservorio en el tiempo t
-        avg_activation = reservoir_state_t.mean (dim = 0)
-
+        avg_activation = reservoir_state_t.mean(dim=0)
+    
         # Calcular el cambio en los pesos sinápticos utilizando la regla BCM
         delta_weights = self.learning_rate * (torch.outer(avg_activation, avg_activation) - self.theta_m * torch.pow(self.reservoir_weights, 2))
-
+    
         # Actualizar los pesos sinápticos del reservorio
         self.reservoir_weights += delta_weights.to(self.device)
-        
+    
         # Opcionalmente, actualizar el umbral de modificación
-        self.theta_m = reservoir_state_t.norm(dim = 1).mean()
+        self.theta_m = reservoir_state_t.norm(dim=1).mean()
 
 
     def _spectral_reservoir_weights_circ (self, n_internal_units, spectral_radius):

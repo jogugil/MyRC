@@ -1226,15 +1226,24 @@ class MyRC:
         elif self.mts_rep == 'reservoir':
             input_repr = self._compute_reservoir_represtn (rc_dim_states, input_data, n_tr_drop) 
         elif self.mts_rep == 'last':
-            input_repr     = rc_dim_states [:, -1, :]
+            input_repr = rc_state [:, -1, :]
         elif self.mts_rep == 'mean':
-            input_repr = np.mean (rc_dim_states, axis = 1)
+            if isinstance(rc_state, torch.Tensor):
+                input_repr = torch.mean (rc_state, dim = 1)
+            else:
+                input_repr = np.mean (rc_state, axis = 1)
         elif self.mts_rep == 'id':
-            input_repr = rc_dim_states.reshape(rc_dim_states.shape[0], -1)
+            if isinstance(rc_dim_states, torch.Tensor):
+                input_repr = rc_dim_states.view (rc_dim_states.size (0), -1)
+            else:
+                input_repr = rc_dim_states.reshape (rc_dim_states.shape [0], -1)
         elif self.mts_rep == 'state':
-            input_repr = rc_state.reshape(rc_state.shape[0], -1)
+            if isinstance(rc_state, torch.Tensor):
+                input_repr = rc_state.view (rc_state.size (0), -1)
+            else:
+                input_repr = rc_state.reshape (rc_state.shape [0], -1)  
         else:
-            raise RuntimeError('Invalid representation ID: output, reservoir, last o mean')  
+            raise RuntimeError('Invalid representation ID: output, reservoir, state, id, last o mean')
        # print (f'fit : input_repr:{input_repr.shape}')
         self.input_repr_tr = input_repr
         # ============ Apply readout ============
@@ -1277,17 +1286,29 @@ class MyRC:
             rc_dim_states_xte = self._apply_dimensionality_reduction (mts_rep_state_xte)
         else:
             rc_dim_states_xte = mts_rep_state_xte
+            
         # ============ Generate representation of the MTS ============
         if self.mts_rep == 'output':
             input_repr_xte = self._compute_output_represtn (rc_dim_states_xte, Xte, n_tr_drop)  
         elif self.mts_rep == 'reservoir':
             input_repr_xte = self._compute_reservoir_represtn (rc_dim_states_xte, Xte, n_tr_drop) 
         elif self.mts_rep == 'last':
-            input_repr_xte = rc_dim_states_xte [:, -1, :]
+            input_repr_xte = mts_rep_state_xte [:, -1, :]
         elif self.mts_rep == 'mean':
-            input_repr_xte = np.mean (rc_dim_states_xte, axis = 1)
+            if isinstance(mts_rep_state_xte, torch.Tensor):
+                input_repr_xte = torch.mean (mts_rep_state_xte, dim = 1)
+            else:
+                input_repr_xte = np.mean (mts_rep_state_xte, axis = 1)
         elif self.mts_rep == 'id':
-            input_repr_xte = rc_dim_states_xte
+            if isinstance(rc_dim_states, torch.Tensor):
+                input_repr_xte = rc_dim_states_xte.view (rc_dim_states_xte.size (0), -1)
+            else:
+                input_repr_xte = rc_dim_states_xte.reshape (rc_dim_states_xte.shape [0], -1)
+        elif self.mts_rep == 'state':
+            if isinstance(rc_dim_states_xte, torch.Tensor):
+                input_repr_xte = rc_dim_states_xte.view (rc_dim_states_xte.size (0), -1)
+            else:
+                input_repr_xte = rc_dim_states_xte.reshape (rc_dim_states_xte.shape [0], -1) 
         else:
             raise RuntimeError('Invalid representation ID: output, reservoir, last o mean') 
             

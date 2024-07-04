@@ -88,6 +88,10 @@ umap-learn
 # avanzadas de teoría de redes y análisis de recurrencia.
 pyunicorn
 
+# Optuna es una biblioteca de optimización automática de hiperparámetros diseñada para realizar búsquedas eficientes y flexibles utilizando estrategias avanzadas 
+# como búsqueda bayesiana y búsqueda por cuadrícula..
+ optuna
+
 
 
 

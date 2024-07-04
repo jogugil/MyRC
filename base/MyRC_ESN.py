@@ -338,7 +338,7 @@ class MyESN (nn.Module):
         if self.use_input_layer:
             reservoir_input = self.input_layer (input_data)
         else:
-            reservoir_input = torch.matmul (input_data, self.input_weights.to (self.device))
+            reservoir_input    = torch.matmul (input_data, self.input_weights.to(self.device))
 
         # obtenemos el estado actual trasnmitiendo al información de entrada a los nodos
         # del RC atendiendo a la matriz de conectividad (reservoir_state)
@@ -627,10 +627,11 @@ class MyESN (nn.Module):
             - Tensor con la matriz de pesos del reservorio ajustada y con conectividad esparsa.
         '''
         # print (f'reservoir_weights 0:{self.reservoir_weights.device}')
-        self.reservoir_weights = self.reservoir_weights.to(self.device)
+        
         # print (f'reservoir_weights 1:{self.reservoir_weights.device}')
         if not isinstance (self.reservoir_weights, torch.Tensor):
             self.reservoir_weights = torch.tensor (self.reservoir_weights, dtype = torch.float32).to (self.device)
+        self.reservoir_weights = self.reservoir_weights.to(self.device)
         # print (f'reservoir_weights 2:{self.reservoir_weights.device}')
         self.reservoir_weights *= self.spectral_radius / torch.max (torch.abs (torch.linalg.eigvals (self.reservoir_weights)))
         # print (f'reservoir_weights 3:{self.reservoir_weights.device}')
@@ -678,9 +679,10 @@ class MyESN (nn.Module):
             self.reservoir_weights = torch.empty (self.reservoir_size, self.reservoir_size)
             init.trunc_normal_ (self.reservoir_weights, mean = self.init_mean, std = self.init_std)
         elif self.init_type == 'binorm':
-          self.input_weights     = (2.0 * np.random.binomial(1, 0.5, [self.input_size, self.reservoir_size]) - 1.0) * self.input_scaling
-          self.reservoir_weights = (2.0 * np.random.binomial(1, 0.5, [self.reservoir_size, self.reservoir_size]) - 1.0)
-          print(f'{type(self.reservoir_weights)}') 
+            self.input_weights = torch.tensor((2.0 * np.random.binomial(1, 0.5, [self.input_size, self.reservoir_size]) - 1.0) * self.input_scaling, dtype=torch.float32)
+            self.reservoir_weights = torch.tensor((2.0 * np.random.binomial(1, 0.5, [self.reservoir_size, self.reservoir_size]) - 1.0), dtype=torch.float32)
+
+            print(f'{type(self.reservoir_weights)}') 
         else:
             raise ValueError("Invalid initialization type. Use 'rand', 'orthogonal', or 'trunc_normal'.")
             

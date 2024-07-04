@@ -143,7 +143,7 @@ class EEG_Data:
         self._fraw = None
         
     def set_data (self, data):
-        print(data.info['dig'])
+        # print(data.info['dig'])
         self.set_raw (mne.io.RawArray(data.get_data (),data.info, verbose = self._DEBUG))
 
     def get_data (self):
@@ -399,14 +399,11 @@ class EEG_Data:
         # Crear un objeto Raw con tus datos brutos
         raw = mne.io.RawArray (raw_m.get_data (), info) # Creo el objeto conlso datos EEG en crudo y asocio tipo canales
          
-        
         if self._DEBUG: print (raw.info)
         
         self.set_raw (raw) # Me guardo los datos en crudo como objeto raw mne y con sus canales asociados
         if self.get_fraw () is not None:
             raw_f       = mne.io.RawArray (self.get_fraw ().get_data (), info) 
-            filter_data = raw_f.get_data (picks = filter_channels)
-            raw_f       = mne.io.RawArray (filter_data, info_filter)
             self.set_fraw (raw_f) # Me guardo los datos filtrados como objeto raw mne y con sus canales asociados
         
 
@@ -517,7 +514,7 @@ class EEG_Data:
         return names
 
 ###### Preprocesamiento señales temporales de los canales del EEG
-    def channel_filtered(self, cut_low=100, cut_hi=0.2):
+    def channel_filtered (self, cut_low = 100, cut_hi = 0.2):
         """
             Aplica una serie de filtros a los datos EEG para eliminar el ruido y ajustar las frecuencias de interés.
         
@@ -547,21 +544,22 @@ class EEG_Data:
                 5. Opción de visualizar el espectro de potencia después de cada paso de filtrado, si está en modo de depuración.
                 6. Guarda la información de los datos filtrados y retorna el objeto Raw filtrado.
         """
-        sr = self._sr
-        raw = self.get_raw()
+        sr       = self._sr
+        raw      = self.get_raw () 
         raw.info = self._info
-    
+         
         if self._DEBUG_GR:
-            psd_fig = raw.compute_psd(fmax=sr/2).plot(average=True, picks="data", exclude="bads", amplitude=False)
+            psd_fig = raw.compute_psd (fmax=sr/2).plot (average = True, picks = "data", exclude = "bads", amplitude = False)
             plt.show ()
-            plt.close(psd_fig)
+            plt.close (psd_fig)
     
         raw_filter = None
+        # print (f'signal_size:{raw.get_data ().shape}')
         if cut_low > 51:
             # Aplicar filtro paso banda 0.2 hasta 49 Hz
-            raw_lowpass = raw.copy().filter(l_freq=cut_hi, h_freq=49, fir_design='firwin', method='fir',
-                                            l_trans_bandwidth='auto', h_trans_bandwidth='auto',
-                                            fir_window='hamming', verbose=self._DEBUG)
+            raw_lowpass = raw.copy ().filter(l_freq = cut_hi, h_freq = 49, fir_design = 'firwin', method = 'fir',
+                                            l_trans_bandwidth = 'auto', h_trans_bandwidth = 'auto',
+                                            fir_window = 'hamming', verbose = self._DEBUG)
             
             # Aplicar filtro paso banda de 52 a cut_low Hz
             raw_bandpass = raw.copy().filter(l_freq=52, h_freq=cut_low, fir_design='firwin', method='fir',
@@ -569,22 +567,22 @@ class EEG_Data:
                                              fir_window='hamming', verbose=self._DEBUG)
     
             # Concatenar los resultados de los filtros
-            raw_filter = mne.concatenate_raws([raw_lowpass, raw_bandpass])
+            raw_filter = mne.concatenate_raws ([raw_lowpass, raw_bandpass])
         else:
             # Aplicar filtro paso bajo a cut_low Hz
-            raw_filter = raw.copy().filter(l_freq=cut_hi, h_freq=cut_low, fir_design='firwin', method='fir',
-                                           l_trans_bandwidth='auto', h_trans_bandwidth='auto',
-                                           fir_window='hamming', verbose=self._DEBUG)
+            raw_filter = raw.copy ().filter(l_freq = cut_hi, h_freq = cut_low, fir_design = 'firwin', method = 'fir',
+                                           l_trans_bandwidth = 'auto', h_trans_bandwidth = 'auto',
+                                           fir_window = 'hamming', verbose = self._DEBUG)
     
         if self._DEBUG_GR:
-            psd_fig = raw_filter.compute_psd(fmax=sr/2).plot(average=True, picks="data", exclude="bads", amplitude=False)
-            plt.show()
-            plt.close(psd_fig)
+            psd_fig = raw_filter.compute_psd (fmax = sr/2).plot(average = True, picks = "data", exclude = "bads", amplitude= False)
+            plt.show ()
+            plt.close (psd_fig)
     
         # Actualizar la información de la clase con los datos filtrados
-        self.set_fraw(raw_filter.copy())
-        self.get_fraw().info = raw_filter.info
-    
+        self.set_fraw (raw_filter.copy ())
+        self.get_fraw().info = raw_filter.info 
+         
         return self.get_fraw()
 
     def channel_filtered_notch (self, cut_low = 100, cut_hi = 0.2, freq_notch = [50]):
@@ -858,13 +856,11 @@ class EEG_Data:
 
         return artifact_components
 
-    def _identify_artifact_hist_components (self, sources, similarity_threshold = 0.97,
-                                                  alpha = 0.05, bins = 20, debug = True):
-    
+    def _identify_artifact_hist_components (self, sources, similarity_threshold = 0.97, alpha = 0.05, bins = 20):
         """
             Identifica componentes ICA artefactuales basados en la comparación de histogramas de amplitudes
             con una distribución normal ajustada y la prueba de chi-cuadrado.
-
+    
             Parámetros:
             -----------
             sources : array-like
@@ -879,52 +875,57 @@ class EEG_Data:
                 Número de divisiones para el histograma de amplitudes. Por defecto es 20.
             debug : bool, opcional
                 Si es True, imprime información de depuración. Por defecto es True.
-
+    
             Returns:
             --------
             artifact_components : list of int
                 Índices de los componentes ICA identificados como artefactuales basados en la comparación
                 del histograma de amplitudes con la distribución normal ajustada y la prueba de chi-cuadrado.
         """
-        artifact_components = []
+        artifact_components    = []
         histogram_similarities = []
-        chi2_p_values = []
-
+        chi2_p_values          = []
+    
         for i in range(sources.shape[0]):
             data = sources[i, :]
-
-            hist, bin_edges = np.histogram(data, bins=bins, density=True)
-            bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-
-            mu, std = norm.fit(data)
-            p = norm.pdf(bin_centers, mu, std)
-
-            hist /= np.sum(hist)
-            p /= np.sum(p)
-
-            similarity = np.corrcoef(hist, p)[0, 1]
-            histogram_similarities.append(similarity)
-
-            chi2_stat, chi2_p_value = chisquare(hist, f_exp=p)
-            chi2_p_values.append(chi2_p_value)
-
+    
+            hist, bin_edges = np.histogram (data, bins = bins, density = True)
+            bin_centers     = (bin_edges [:-1] + bin_edges [1:]) / 2
+    
+            mu, std = norm.fit (data)
+            p       = norm.pdf (bin_centers, mu, std)
+    
+            # Evitar divisiones por cero
+            if np.sum(hist) != 0:
+                hist /= np.sum(hist)
+            if np.sum(p) != 0:
+                p /= np.sum(p)
+    
+            similarity = np.corrcoef (hist, p)[0, 1]
+            histogram_similarities.append (similarity)
+    
+            # Evitar valores esperados cero en la prueba de chi-cuadrado
+            f_exp_nonzero = np.where (p != 0, p, np.finfo(float).eps)
+            chi2_stat, chi2_p_value = chisquare(hist, f_exp=f_exp_nonzero)
+            chi2_p_values.append (chi2_p_value)
+    
             if similarity < similarity_threshold or chi2_p_value < alpha:
                 artifact_components.append(i)
-
-            if debug:
+    
+            if self._DEBUG:
                 print(f'Componente {i}:')
                 print(f'  Similitud de la densidad del histograma: {similarity:.4f}')
                 print(f'  Mu: {mu:.4f}, Std: {std:.4f}')
                 print(f'  P-valor chi-cuadrado: {chi2_p_value:.4f}')
                 print()
-
+    
         return artifact_components
 
-    def _detect_and_exclude_high_variance_ica (self, raw, ica, idx, var_thresh, amp_thresh, peak_thresh, debug = True):
+    def _detect_and_exclude_high_variance_ica(self, raw, ica, idx, var_thresh, amp_thresh, peak_thresh):
         """
             Detectar y excluir componentes ICA con alta varianza, alta amplitud y picos altos. Además se aplica test de similitud
             a una normal de los histogramas de las componentes ICA.
-
+    
             Parámetros:
             -----------
             raw : instancia de mne.io.Raw
@@ -941,61 +942,67 @@ class EEG_Data:
                 El umbral para detectar componentes con picos altos.
             debug : bool, opcional
                 Si es True, imprime información de depuración y genera gráficos. El valor predeterminado es True.
-
+    
             Retorna:
             --------
             high_indices : lista de int
-              Índices de los componentes ICA identificados como artefactos. Si no se encuentran artefactos, retorna None.
+                Índices de los componentes ICA identificados como artefactos. Si no se encuentran artefactos, retorna None.
         """
         # Detección artefactos por z-score
-        sources          = ica.get_sources (raw).get_data ()
-        component_vars   = np.var (sources, axis = 1)
-        z_scores         = (component_vars - np.mean(component_vars)) / np.std(component_vars)
+        sources        = ica.get_sources (raw).get_data ()
+        component_vars = np.var (sources, axis=1)
+        std_dev        = np.std (component_vars)
+        
+        # Asegurarse de que la desviación estándar no sea cero
+        if std_dev != 0:
+            z_scores = (component_vars - np.mean (component_vars)) / std_dev
+        else:
+            z_scores = np.zeros_like (component_vars)
+            
         high_var_indices = np.where (z_scores > var_thresh)[0]
-
-        if debug:
-            self._plot_ica_components (raw.times, sources, idx, max_components_per_fig = 10)
+    
+        if self._DEBUG_GR:
+            self._plot_ica_components (raw.times, sources, idx, max_components_per_fig=10)
+    
         # Detección artefactos por mean_abs_amplitude
-        mean_abs_amplitude       = np.mean (np.abs(sources), axis = 1)
+        mean_abs_amplitude       = np.mean (np.abs (sources), axis = 1)
         global_mean_amplitude    = np.mean (mean_abs_amplitude)
         global_std_dev_amplitude = np.std (mean_abs_amplitude)
-
+    
         thresh           = global_mean_amplitude + amp_thresh * global_std_dev_amplitude
         high_amp_indices = np.where (mean_abs_amplitude > thresh)[0]
-
+    
         # Detección de artefactos por max_peaks
-        max_peaks            = np.max (np.abs(sources), axis = 1)
+        max_peaks            = np.max (np.abs(sources), axis=1)
         global_mean_peaks    = np.mean (max_peaks)
         global_std_dev_peaks = np.std (max_peaks)
-
-        peak_thresh_value = global_mean_peaks + amp_thresh * global_std_dev_peaks
+    
+        peak_thresh_value = global_mean_peaks + peak_thresh * global_std_dev_peaks
         high_peak_indices = np.where (max_peaks > peak_thresh_value)[0]
-
+    
         # Detección de artefactos por test norm of density hist component
         high_norm_indices = self._identify_artifact_hist_components(sources)
-
-        if debug:
-            print (f"High variance indices: {high_var_indices.tolist()}")
-            print (f"High amplitude indices: {high_amp_indices.tolist()}")
-            print (f"High peak indices: {high_peak_indices.tolist()}")
-            print (f"High normal indices: {high_norm_indices}")
-
-        if debug:
-            self._visualize_signals_and_amplitudes (raw.times, sources, mean_abs_amplitude, max_peaks)
-
-        high_indices = np.unique (np.concatenate ((high_var_indices, high_amp_indices, high_peak_indices, high_norm_indices)))
-
-        if debug:
-            print(f"Combined high indices: {high_indices.tolist()}")
-            self._plot_ica_components_distribution (raw.times, sources, title = 'Distribución de Componentes ICA', bins = 20)
-
+    
+        if self._DEBUG:
+            print(f"High variance indices: {high_var_indices.tolist()}")
+            print(f"High amplitude indices: {high_amp_indices.tolist()}")
+            print(f"High peak indices: {high_peak_indices.tolist()}")
+            print(f"High normal indices: {high_norm_indices}")
+    
+        if self._DEBUG_GR:
+            self._visualize_signals_and_amplitudes(raw.times, sources, mean_abs_amplitude, max_peaks)
+    
+        high_indices = np.unique (np.concatenate((high_var_indices, high_amp_indices, high_peak_indices, high_norm_indices)))
+    
+        if self._DEBUG_GR:
+            print (f"Combined high indices: {high_indices.tolist()}")
+            self._plot_ica_components_distribution(raw.times, sources, title='Distribución de Componentes ICA', bins=20)
+    
         if len(high_indices) > 0:
             return high_indices
-        else:
-            print("No artifacs found, skipping artifact detection.")
-            return None
+        return None
 
-    def _apply_ica_and_reject_segments (self, raw, ica, debug = True):
+    def _apply_ica_and_reject_segments (self, raw, ica, debug = False):
         """
         Aplicar ICA (Análisis de Componentes Independientes) a los datos EEG sin procesar para identificar y rechazar
         segmentos con artefactos causados por actividades de EOG (Electrooculografía), ECG (Electrocardiografía) y EMG (Electromiografía).
@@ -1155,7 +1162,7 @@ class EEG_Data:
         return kl_divergence
         
     def remove_ica_components_artifact (self, var_thresh = 2.0, amp_thresh = 2.0,
-                                         ecg_thresh = 0.25, peak_thresh = 0.85):
+                                         ecg_thresh = 0.25, peak_thresh = 0.85 ):
         """
             Remove ICA components identified as artifacts from EEG data.
         
@@ -1175,6 +1182,7 @@ class EEG_Data:
                 raw_c : instance of Raw
                     The raw data after removal of ICA components identified as artifacts.
         """
+        
         raw_p = None
         if self.get_fraw () is None:
             raw_p = self.get_raw ().copy ()
@@ -1194,11 +1202,11 @@ class EEG_Data:
         ica.fit (raw_c)
         ica.exclude = []
         # Mostrar el número de componentes seleccionados automáticamente
-        print(f"Número de componentes seleccionados: {ica.n_components_}")
+        if self._DEBUG: print(f"Número de componentes seleccionados: {ica.n_components_}")
         idx_mov = self._apply_ica_and_reject_segments (raw_p, ica, self._DEBUG)
         idx_var = self._detect_and_exclude_high_variance_ica (raw_p, ica, self._id_subject,
                                                             var_thresh = var_thresh, amp_thresh = amp_thresh,
-                                                            peak_thresh = peak_thresh, debug = self._DEBUG)
+                                                            peak_thresh = peak_thresh)
 
         if idx_mov is not None:
             ica.exclude.extend (idx_mov)
@@ -1460,6 +1468,8 @@ def read_random_eeg_files(directory, entity_subject, count_subj, verbose = False
         :param verbose: If True, prints the progress.
         :return: DataFrame with EEG data from the randomly selected files in the directory.
     """
+
+    
     # Get list of all BDF files in the directory
     all_files = [file for file in os.listdir(directory) if file.endswith('.bdf')]
     
@@ -1475,7 +1485,7 @@ def read_random_eeg_files(directory, entity_subject, count_subj, verbose = False
         file_path = os.path.join(directory, file)
         
         with redirect_stdout(StringIO()):  # This prevents messages from being printed to the screen
-            raw = mne.io.read_raw_bdf(file_path, preload=True)
+            raw = mne.io.read_raw_bdf(file_path, preload = True)
         
         eeg_data = {
             'File': file,
@@ -1548,31 +1558,31 @@ def extract_features(internal_representations):
 
     return features
  
-def load_data (direct_Younger = "./Younger",direct_Older = './Older', n_y_subject = 2, n_o_subject = 2, rand_load = True, verbose = False, verbose_gr = False):
+def load_data (direct_Younger = "./Younger",direct_Older = './Older', 
+                 n_y_subject = 2, n_o_subject = 2, rand_load = True, verbose = False, verbose_gr = False):
     """
         Carga los datos de EEG de sujetos jóvenes y mayores desde los directorios especificados.
     
         Parámetros:
             direct_Younger (str): Directorio que contiene los datos de los sujetos jóvenes.
-            direct_Older (str): Directorio que contiene los datos de los sujetos mayores.
-            n_y_subject (int): Número de sujetos jóvenes a cargar.
-            n_o_subject (int): Número de sujetos mayores a cargar.
-            rand_load (bool): Indica si la lectura de ficheros se realiza de forma aleatoria = True o secuencial = False.
-            verbose (bool): Si es True, imprime mensajes de progreso.
-            verbose_gr (bool): Si es True, se muestran gráficas de progreso
+            direct_Older (str)  : Directorio que contiene los datos de los sujetos mayores.
+            n_y_subject (int)   : Número de sujetos jóvenes a cargar.
+            n_o_subject (int)   : Número de sujetos mayores a cargar.
+            rand_load (bool)    : Indica si la lectura de ficheros se realiza de forma aleatoria = True o secuencial = False.
+            verbose (bool)      : Si es True, imprime mensajes de progreso.
+            verbose_gr (bool)   : Si es True, se muestran gráficas de progreso
         Retorna:
             dataset_Younger (DataFrame): Conjunto de datos de los sujetos jóvenes.
-            dataset_Older (DataFrame): Conjunto de datos de los sujetos mayores.
+            dataset_Older (DataFrame)  : Conjunto de datos de los sujetos mayores.
     
         Descripción:
             - Utiliza la función `create_dataset` para cargar los datos.
             - Imprime mensajes de progreso si `verbose` es True.
     """
-    if verbose:
-        print ("Cargamos dataset Younger")
+    if verbose: print ("Cargamos dataset Younger")
     dataset_Younger = create_dataset (direct_Younger, label = 'Younger', count_subj = n_y_subject, rand_load = rand_load, verbose = verbose, verbose_gr = verbose_gr)
-    if verbose:
-        print ("Cargamos dataset Older")
+    
+    if verbose:  print ("Cargamos dataset Older")
     dataset_Older   = create_dataset (direct_Older, label = 'Older', count_subj = n_o_subject, rand_load = rand_load,verbose = verbose, verbose_gr = verbose_gr)
 
     return dataset_Younger, dataset_Older
@@ -1607,8 +1617,8 @@ def filtering_dt (dt_subject, cut_low = 30, n_decim = 2):
     
         Parámetros:
         dt_subject (DataFrame): Conjunto de datos de los sujetos.
-        cut_low (int): Frecuencia de corte baja para el filtro.
-        n_decim (int): Factor de decimación para remuestrear los datos.
+        cut_low (int)         : Frecuencia de corte baja para el filtro.
+        n_decim (int)         : Factor de decimación para remuestrear los datos.
     
         Retorna:
         None
@@ -2080,8 +2090,8 @@ def create_coherence_original_vs_reconstructed(eeg_o, eeg_r, fs=512, nperseg=256
         - cohe_band (list): Lista con los valores promedio de coherencia por banda y canal.
     """
     n_channels = eeg_o.shape[0]
-    print(f'eeg_o: {eeg_o.shape}')
-    print(f'eeg_r: {eeg_r.shape}')
+    # print(f'eeg_o: {eeg_o.shape}')
+    # print(f'eeg_r: {eeg_r.shape}')
     cohe_band = []
     cohe      = []
     for i in range(n_channels):
@@ -2095,9 +2105,9 @@ def create_coherence_original_vs_reconstructed(eeg_o, eeg_r, fs=512, nperseg=256
         else:
             cohe.append(np.mean(Cxy))  # Promedio de coherencia en todas las frecuencias
 
-        print(f"Cxy average for channel {i}: {np.mean(Cxy)}")
-        print(f"Cxy shape: {Cxy.shape}")
-        print(f"f shape: {f.shape}")
+        # print(f"Cxy average for channel {i}: {np.mean(Cxy)}")
+        # print(f"Cxy shape: {Cxy.shape}")
+        # print(f"f shape: {f.shape}")
 
         # Graficar la coherencia
         plt.figure()
@@ -2197,7 +2207,7 @@ def evaluate_clustering(labels, labels_pred):
     ################################################################# 
     ## Extracción de características
     #################################################################
-def homogenize_raw_size(dataset):
+def homogenize_raw_size (dataset):
     """
         Ajusta el tamaño de los objetos Raw de cada sujeto en el dataset al tamaño mínimo encontrado.
     
@@ -2208,7 +2218,7 @@ def homogenize_raw_size(dataset):
         Returns:
             - dataset (DataFrame): El dataset con los objetos Raw de cada sujeto ajustados al tamaño mínimo.
     """
-
+    
     # Obtener el número de sujetos a incluir
     num_subjects = dataset.shape [0]
 
@@ -2217,31 +2227,30 @@ def homogenize_raw_size(dataset):
         min_dt = min ([dataset ['EEG'].iloc[i].get_fraw ().get_data ().shape[1] for i in range (num_subjects)])
     else:
         min_dt = min ([dataset ['EEG'].iloc[i].get_raw ().get_data ().shape[1] for i in range (num_subjects)])
-    print (f'min_dt:{min_dt}')
+        
+    # print (f'min_dt:{min_dt}')
     # Recortar todos los objetos Raw al tamaño mínimo encontrado
     for i in range(num_subjects):
-        print (f'i_subject:{i}')
         subj_data = dataset.iloc [i]
-        print (f"1,- subj_data[EEG].get_fraw().copy().get_data ()  :{subj_data['EEG'].get_fraw().copy().get_data ().shape }")
+        # print (f"subj_data['EEG']:{subj_data['EEG'].get_fraw().copy().get_data ().shape}")
         data = subj_data['EEG'].get_fraw().copy().get_data () [:,:min_dt]  # Obtener una copia del objeto Raw del sujeto actual
        
-        subj_data['EEG'].set_data (mne.io.RawArray (data,  subj_data['EEG'].get_fraw().info))  # Actualizar el objeto Raw en el dataset
-        subj_data['EEG'].set_fraw (mne.io.RawArray (data,  subj_data['EEG'].get_fraw().info))  # Actualizar el objeto fRaw en el dataset
-
-        print (f"2,- subj_data[EEG].get_fraw().copy().get_data ()  :{subj_data['EEG'].get_fraw().copy().get_data ().shape }")
+        subj_data['EEG'].set_data (mne.io.RawArray (data,  subj_data['EEG'].get_fraw().info, verbose = None))  # Actualizar el objeto Raw en el dataset
+        subj_data['EEG'].set_fraw (mne.io.RawArray (data,  subj_data['EEG'].get_fraw().info, verbose = None))  # Actualizar el objeto fRaw en el dataset
+    # print (f'dataset:{dataset.shape}')
     return dataset
 
 
 def segment_data (raw_dt,  decim = 1, sw = 10):
     # segmentamos la señal en epochs con tamaño de ventaana sw
     sr = raw_dt.info['sfreq']
+    # print (f'sr:{sr}')
     times, data_win = yasa.sliding_window (raw_dt.get_data (), sf = sr, window = sw)
-    print (f'data_win:{data_win.shape}')
+    # print (f'data_win:{data_win.shape}')
 
     return times, data_win
 
 def extract_features (ext_features, eeg_resam, eeg_names, eeg_eog_resam, eeg_eog_names, level = 1):
-    print (eeg_resam.shape)
     df_features  = ext_features.wavelet_transform (eeg_resam, pywt.swt, eeg_names, level)
     df_features = pd.concat ([df_features,  ext_features.PeaktoPeak (eeg_eog_resam,eeg_eog_names)], axis = 1)
     df_features = pd.concat ([df_features,  ext_features.Entropy (eeg_eog_resam,eeg_eog_names)], axis = 1)
@@ -2276,10 +2285,10 @@ def extract_features_eeg_dataset ( dataset, selected_electrodes, var_thresh = 1.
     """
     dataset = homogenize_raw_size (dataset)
 
-    print (f'dataset.shape: {dataset.shape}') 
+    if debug: print (f'dataset.shape: {dataset.shape}') 
     # Obtener el número de sujetos a incluir
     num_subjects = dataset.shape [0]
-    print (f'num_subjects: {num_subjects}')
+    
 
     # Crear una lista para almacenar las características de todos los sujetos
     all_features = []
@@ -2290,7 +2299,7 @@ def extract_features_eeg_dataset ( dataset, selected_electrodes, var_thresh = 1.
 
     # Iterar sobre cada sujeto en el dataset
     for subj_idx in range(num_subjects):
-        print (f'subj_idx:{subj_idx}')
+        if debug: print (f'subj_idx:{subj_idx}')
 
         # Obtener los datos EEG del sujeto actual
         raw_     = dataset.iloc [subj_idx]['EEG'].get_fraw ().copy ()
@@ -2298,7 +2307,8 @@ def extract_features_eeg_dataset ( dataset, selected_electrodes, var_thresh = 1.
 
         # Prueba de las nuevas funciones
         if icaFlag:
-            raw_c = eeg_data.remove_ica_components_artifact (var_thresh = var_thresh, amp_thresh = amp_thresh, peak_thresh = peak_thresh)
+            raw_c = eeg_data.remove_ica_components_artifact (var_thresh = var_thresh, amp_thresh = amp_thresh, 
+                                                                            peak_thresh = peak_thresh )
         else:
             raw_c = raw_
 
@@ -2311,23 +2321,25 @@ def extract_features_eeg_dataset ( dataset, selected_electrodes, var_thresh = 1.
             ch_types =  ['eeg'] * len (selected_electrodes) + ['eog'] * len (eog_channels) + [exg_type] * len (exg_channels) + ['misc'],  # Lista de tipos de canales ('eeg', 'eog', 'ecg', 'emg',)
             sfreq    = raw_c.info ['sfreq']
         )
-        print (f'filtered_data:{filtered_data.shape}')
+        if debug: print (f'filtered_data:{filtered_data.shape}')
         raw_clean = mne.io.RawArray (filtered_data, info_filter)
-
-        # Extracción características de lso canales sleccionados
-        time, eeg_resam =  segment_data (raw_clean)
-        print (f'eeg_resam:{eeg_resam.shape}')
+        if debug: print (f'raw_clean:{raw_clean.get_data ().shape}')
+        # Extracción características de los canales sleccionados
+        time, eeg_resam = segment_data (raw_clean)
+        if debug: print (f'eeg_resam:{eeg_resam.shape}')
         eeg_resam = eeg_resam [:,:,:-30] #eliminamos las 30 últimas muestras de cada canal porque lo indica el artículo de referencia
 
         n_eeg = len (selected_electrodes)
         n_eog = len (eog_channels)
-        ext_features =  ExractFeatures ()
+        if debug: print (f'n_eeg:{n_eeg}')
+        if debug: print (f'n_eog:{n_eog}')
+        ext_features = ExractFeatures ()
         mtx_fetures  = extract_features (ext_features, eeg_resam [:,0:n_eeg,:], selected_electrodes, eeg_resam [:,n_eeg+1:(n_eeg+1+n_eog),:], eog_channels)
-        print (f'mtx_fetures:{mtx_fetures.shape}')
+        if debug: print (f'mtx_fetures:{mtx_fetures.shape}')
         # Agregar las características del sujeto actual a la lista de todas las características
         all_features.append(mtx_fetures)
 
     features_matrix = np.array (all_features)
-
+    if debug: print (f'features_matrix:{features_matrix.shape}')
 
     return features_matrix

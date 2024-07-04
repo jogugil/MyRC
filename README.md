@@ -561,7 +561,7 @@ Se construyó una API configurada mediante un diccionario config. Este diccionar
             'excitability_factor':0.01,               # para: 'excitability'
             'device': 'cpu'
       }
-
+ 
 ## Parámetros de Configuración
   
   ### 1. `seed`

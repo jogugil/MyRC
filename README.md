@@ -1,7 +1,11 @@
-# Procesado y Estudio de Señales EEG de Diferentes Sujetos en Reposo
+# Desarrollo Framework del modelo RC-ESN para el Procesado y Estudio de Señales EEG
 
 ## Objetivo
-El objetivo de este estudio es procesar y analizar señales EEG de diferentes sujetos en estado de reposo utilizando un modelo de Reservoir Computing, específicamente Echo State Network (ESN), para identificar patrones en la dinámica temporal de las señales que permitan distinguir entre EEG de jóvenes adultos y mayores.
+El objetivo principal es crear un framework que incluya diferentes librerías de Python, permitiendo el procesamiento y estudio de señales EEG mediante un modelo de Reservoir Computing.
+
+El framework se utilizará tanto para datos sintéticos como para analizar señales EEG de diferentes sujetos en estado de reposo, utilizando un modelo de Reservoir Computing, específicamente Echo State Network (ESN). El propósito es identificar patrones en la dinámica temporal de las señales que permitan distinguir entre EEG de jóvenes adultos y personas mayores.
+
+El framework contiene diversas librerías de Python con clases y funciones diseñadas para abarcar todo el ciclo del estudio, desde el tratamiento de datos hasta la evaluación de resultados.
 
 ## Metodología
 

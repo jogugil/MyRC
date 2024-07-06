@@ -153,6 +153,8 @@ exg_channels = ['EXG5', 'EXG6', 'EXG7', 'EXG8']
 ```
 # La ***primera fase*** del proyecto fue el ***estudio de este tipo de señales EEG***.
 
+Se crea un script para procesar lso datos raw y crear ficheros con dataset con las señales EEG procesadas.
+
 # La **segunda fase** fue el  ***Procesamiento de Señales EEG***: 
 
 Las señales EEG procesadas permiten la reconstrucción y predicción de patrones temporales. Además, se utiliza tanto el aprendizaje supervisado como no supervisado para extraer características significativas y realizar la clasificación de sujetos. Este preprocesamiento incluye varias etapas esenciales para asegurar la calidad y usabilidad de los datos:
@@ -162,7 +164,7 @@ Las señales EEG procesadas permiten la reconstrucción y predicción de patrone
 ##### Eliminación de Artefactos
 
 
-# la **tercera fae del proyecto** creación API para el uso mode
+# la **tercera fase del proyecto** creación API para el uso mode
 
 Se construyó una API configurada mediante un diccionario config. Este diccionario contiene diferentes parámetros que se transforman en hiperparámetros para el modelo, permitiendo una fácil personalización y ajuste del modelo a diferentes necesidades experimentales.
 

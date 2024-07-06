@@ -303,68 +303,6 @@ Al comprender y ajustar estos hiperparámetros, se puede optimizar el rendimient
 
 
 
-# Generación de Datos Sintéticos
-
-Para llevar a cabo los experimentos, primero generamos datos sintéticos que simulan los EEG de diferentes sujetos, creando dos poblaciones distintas: una de jóvenes adultos y otra de mayores. La generación de estos datos se basa en modelos estocásticos y técnicas de simulación que permiten reproducir características clave de las señales EEG reales.
-
-### Modelo Generativo Estocástico
-
-El proceso de generación de datos sintéticos de EEG que se ha utilizado (función 'generate_synthetic_eeg_data' del módulo 'eeg.py') sigue los siguientes pasos clave:
-
-1. **Bandas de Frecuencia**: Se simulan las cinco bandas de frecuencia típicas de las señales EEG: Delta (0.5-4 Hz), Theta (4-8 Hz), Alpha (8-13 Hz), Beta (13-30 Hz) y Gamma (30-100 Hz). Cada banda tiene diferentes implicaciones neurológicas y se comporta de manera distinta en sujetos jóvenes versus mayores.
-
-2. **Diferencias entre Grupos**: Para diferenciar las señales de los jóvenes y los mayores, se asignan características específicas a cada grupo:
-    - **Sujetos Jóvenes**: Estos sujetos muestran un pico de amplitud en la banda Beta, lo cual se asocia con una mayor actividad cognitiva y vigilia. Las señales tienen mayor amplitud y menos ruido.
-    - **Sujetos Mayores**: En contraste, las señales de los mayores son de menor amplitud y presentan más ruido, reflejando la disminución en la actividad cerebral y el incremento de la variabilidad neuronal con la edad.
-
-3. **Dinámica Temporal**:
-    - **Proceso Autoregresivo**: Para capturar la naturaleza temporal de las señales EEG, se agrega un proceso autoregresivo. Este modelo ayuda a imitar las dependencias temporales presentes en las señales EEG reales.
-    - **Proceso Gaussiano**: Además, se incorpora un proceso gaussiano para introducir variabilidad adicional y complejidad en las señales, ayudando a simular condiciones más realistas.
-
-4. **Interacción entre Canales**:
-    - Las señales EEG son multivariantes y presentan interacciones entre diferentes canales (electrodos). Para simular esto, las señales generadas para cada canal incluyen componentes de ruido y variabilidad compartida, reflejando la correlación natural entre diferentes regiones del cerebro.
-
-5. **Ruido Gaussiano**: Finalmente, se añade ruido gaussiano a las señales para imitar las condiciones de grabación reales, donde siempre existe una cierta cantidad de ruido de fondo.
-
-### Justificación del Proceso
-
-La elección de este proceso de generación de datos se basa en varios aspectos críticos:
-
-- **Realismo**: Al incorporar bandas de frecuencia específicas, procesos autoregresivos y gaussianos, y ruido gaussiano, se busca que las señales sintéticas sean lo más realistas posible, permitiendo que los experimentos y análisis realizados sobre estos datos sean relevantes y aplicables a señales EEG reales.
-
-- **Diferenciación entre Grupos**: Las diferencias claras entre las señales de los jóvenes y los mayores permiten estudiar y validar técnicas de clasificación y análisis, asegurando que las características distintivas de cada grupo sean detectables y medibles.
-
-- **Simulación Completa**: La inclusión de dinámicas temporales y la interacción entre canales asegura que las señales generadas no solo sean realistas en términos de frecuencia y amplitud, sino también en su comportamiento temporal y multicanal, lo cual es crucial para cualquier análisis de EEG.
-
-*Este modelo generativo estocástico ofrece una manera robusta de simular señales EEG realistas, proporcionando una base sólida para llevar a cabo experimentos controlados y análisis detallados de las diferencias entre poblaciones de jóvenes adultos y mayores.*
-
-### Utilización de Deep Learning para la Generación de Señales EEG
-
-La generación de señales EEG multivariantes a través de técnicas de deep learning ha ganado atención en los últimos años debido a su capacidad para modelar la complejidad y la estructura temporal de las señales. Modelos como TimeGAN y cosci-GAN son ejemplos prominentes en este campo.
-
-#### TimeGAN
-
-[TimeGAN](https://proceedings.neurips.cc/paper_files/paper/2019/file/c9efe5f26cd17ba6216bbe2a7d26d490-Paper.pdf) (Time-series Generative Adversarial Network) es un modelo avanzado que combina las capacidades de los modelos generativos adversariales (GAN) con la estructura temporal inherente a las series de tiempo. Este modelo no solo se enfoca en generar datos realistas, sino que también mantiene la coherencia temporal de las señales, lo cual es crucial para los datos EEG.
-
-#### cosci.GAN
-
-[cosci.GAN](https://openreview.net/pdf?id=RP1CtZhEmR) es otro ejemplo de aplicación de GANs para la generación de señales temporales multiovariantes. Este modelo ha demostrado ser efectivo en la generación de datos complejos y multivariantes, como las señales EEG, al capturar la dinámica temporal y la interacción entre múltiples canales.
-
-#### Eficacia y Limitaciones
-
-Aunque estos métodos basados en deep learning han mostrado resultados prometedores, su implementación y entrenamiento pueden ser computacionalmente intensivos y requieren grandes volúmenes de datos para lograr un rendimiento óptimo. Además, la interpretación de los modelos generados y la garantía de su realismo sigue siendo un desafío.
-
-### Justificación del Proceso Utilizado Frente al Uso de TimeGAN o cosci.GAN
-
-Aunque los métodos de deep learning como TimeGAN y cosci.GAN tienen el potencial de generar señales EEG multivariantes realistas, hemos optado por un modelo generativo estocástico por varias razones:
-
-1. **Simplicidad y Eficiencia**: El modelo estocástico utilizado es más sencillo y menos exigente computacionalmente en comparación con los métodos de deep learning. Esto permite una generación de datos más rápida y accesible sin la necesidad de grandes infraestructuras de cómputo.
-
-2. **Objetivo del Proyecto**: El objetivo principal del proyecto es el uso de Reservoir Computing para la obtención de la dinámica temporal de las señales y los patrones distintivos entre jóvenes adultos y mayores en reposo. El modelo generativo estocástico nos proporciona un control más directo sobre las características de las señales generadas, asegurando que las diferencias entre los grupos sean claramente definidas y mensurables.
-
-3. **Interpretabilidad**: Los modelos estocásticos permiten una mayor interpretabilidad de los resultados, ya que se puede rastrear y ajustar fácilmente cada componente del proceso de generación. Esto es particularmente útil para validar y ajustar las señales sintéticas de acuerdo a los conocimientos previos sobre las características de las señales EEG reales.
-
-Por ello, aunque los modelos de deep learning como TimeGAN y cosci.GAN son herramientas poderosas para la generación de datos, el enfoque estocástico seleccionado proporciona una solución más práctica y adecuada para los objetivos específicos de nuestro proyecto.
 
 # Evaluación con Datos Reales
 
@@ -485,29 +423,7 @@ La función `remove_ica_components_artifact` se utiliza para eliminar componente
 
 Después de eliminar o no los artefactos (será algo opcional) debemos crear una matriz tridimensional **{número sujetos, tamaño señales, número canales}**. Creando series temporales multivariante por sujeto. Fijamos para todos los sujetos y canales el mismo tamaño de señal.
 
-### Segmentación de Datos y extracción de características
 
-En este proyecto se busca demostrar la robustez que posee el modelo de RC para las señales EEG. Tal que permite obtener patrones de la dinamica temporal de las señales EEG con los cuales poder distinguir entre EEG de jovenes adultos y Mayores. Pero damos la opción de realiar otro camino. En este camino se busca realizar una exracción de caracaterísticas de las señales, las cuales serán la entrada del RC ESN, Para la extracción de características, se realizará una segmentación de las señales temporales. Las señales EEG se segmentan en ventanas temporales para su análisis. Esta segmentación permite una mejor gestión de los datos y facilita la aplicación de técnicas de procesamiento y análisis posteriores.
-# Características basadas en MODWT
-
-| Característica                    | Propósito                                                                                 | Función                                                                                                                         | Capítulo/Página        |
-|-----------------------------------|-------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------|------------------------|
-| Transformada Wavelet (MODWT)      | Realiza una transformada wavelet de la señal EEG utilizando la biblioteca PyWavelets.     | Calcula la energía, el porcentaje de energía, la media y la desviación estándar de los coeficientes de escala y detalle en cada nivel de descomposición. Devuelve un DataFrame con las características extraídas de la transformada wavelet. | Capítulo 4 Página 80   |
-
-# Características Temporales y de Frecuencia
-
-| Característica                    | Propósito                                                                                 | Función                                                                                                                         |
-|-----------------------------------|-------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------|
-| Amplitud Pico a Pico              | Calcula la amplitud pico a pico de la señal EEG.                                           | Calcula la diferencia entre el valor máximo y mínimo de la señal en cada ventana de tiempo. Devuelve un DataFrame con las amplitudes pico a pico para cada canal.  |
-| Entropía                          | Calcula la entropía de la señal EEG.                                                       | Utiliza histogramas para calcular la entropía de Shannon, Renyi y Tsallis para cada ventana de tiempo. Devuelve un DataFrame con los valores de entropía para cada canal. |
-| Potencia Espectral Relativa (RSP) | Calcula el Relative Spectral Power (RSP) de la señal EEG.                                  | Divide la señal en sub-bandas de frecuencia y calcula la potencia espectral relativa en cada sub-banda. Devuelve un DataFrame con los valores de RSP y otros índices asociados como DSI, TSI y ASI. |
-| Parámetros de Hjorth              | Calcula los parámetros de Hjorth de la señal EEG.                                          | Calcula la actividad, movilidad, complejidad, sesgo y curtosis de la señal en cada ventana de tiempo. Devuelve un DataFrame con los parámetros de Hjorth para cada canal. |
-| Parámetros Armónicos              | Calcula los parámetros armónicos de la señal EEG.                                          | Divide la señal en sub-bandas de frecuencia y calcula la frecuencia central, ancho de banda y valor espectral en la frecuencia central para cada sub-banda. Devuelve un DataFrame con los parámetros armónicos para cada canal. |
-| Coeficientes Autoregresivos (AR)  | Calcula los coeficientes autoregresivos (AR) de la señal EEG.                              | Estima los coeficientes AR utilizando un modelo autoregresivo y devuelve la media y la desviación estándar de los coeficientes para cada ventana de tiempo. Devuelve un DataFrame con los coeficientes AR y sus estadísticas para cada canal. |
-| Percentiles                       | Calcula los percentiles de la señal EEG.                                                   | Calcula los percentiles 25, 50 y 75 para cada ventana de tiempo. Devuelve un DataFrame con los percentiles para cada canal.                                       |
-
-Y finalmente lo ideal es normalizar los datos bien mediante una estandarización o una normalización (min-max).
- 
 # la **tercera fae del proyecto** creación API para el uso mode
 
 Se construyó una API configurada mediante un diccionario config. Este diccionario contiene diferentes parámetros que se transforman en hiperparámetros para el modelo, permitiendo una fácil personalización y ajuste del modelo a diferentes necesidades experimentales.
@@ -658,7 +574,6 @@ Se entrega un notebook que contiene una posible implementación de un modelo Dee
 ![imagen](https://github.com/jogugil/MyRC/assets/15160072/84ff6c2c-0926-4d35-a774-da1ecf57ecc3)
 
  
-
 # Resultados
 
 ![imagen](https://github.com/jogugil/MyRC/assets/15160072/af2a6ab2-602c-4c89-9cb0-23203c2c4f17)

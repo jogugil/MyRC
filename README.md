@@ -166,9 +166,6 @@ Las señales EEG procesadas permiten la reconstrucción y predicción de patrone
 
 Se construyó una API configurada mediante un diccionario config. Este diccionario contiene diferentes parámetros que se transforman en hiperparámetros para el modelo, permitiendo una fácil personalización y ajuste del modelo a diferentes necesidades experimentales.
 
-# Hiperparámetros del Modelo implementado: 
-
-
 # Entregas presentes en el proyecto 
 
 ### Datos Sintéticos

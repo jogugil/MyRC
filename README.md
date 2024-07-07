@@ -46,81 +46,37 @@ Además hay que tener en cuena que se debe instarlar torch, dependerá del siste
 Puedes utilizar tanto el código que hay en los notebooks como los diferentes scripts existentes. Modifica y crea tus propios notebook con ayuda de los diferentes módulos desarrollados que contienen tanto el API del RC ESN como clases y funciones auxiliares para el tratamiento de este tipo de datos.
 
 ## Procesos Desarrollados
- 
-### Diagrama en LaTeX (con TikZ)
+ # Diagrama de Procesos
 
-```latex
-\documentclass{article}
-\usepackage{tikz}
-\usetikzlibrary{shapes.geometric, arrows}
+```mermaid
+graph TD;
+    A[Adquisición de Datos] --> B[Preprocesamiento de Señales EEG]
+    B --> C[Extracción de Características]
+    C --> D[Modelado con Echo State Network (ESN)]
+    D --> E[Análisis de Resultados]
 
-\tikzstyle{process} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=orange!30]
-\tikzstyle{arrow} = [thick,->,>=stealth]
+    A --- |Sujetos| A1[Reclutamiento de dos grupos: jóvenes adultos y adultos mayores]
+    A --- |Condiciones| A2[Grabación de señales EEG en estado de reposo]
+    A --- |Equipamiento| A3[Uso de un sistema de adquisición de EEG con múltiples canales]
 
-\begin{document}
+    B --- |Filtrado| B1[Aplicar filtro de banda (0.2-30 Hz)]
+    B --- |Corrección de Artefactos| B2[Uso de ICA para eliminar artefactos de movimiento ocular y musculares]
+    B --- |Segmentación| B3[Dividir señales EEG en ventanas de tiempo]
 
-\begin{tikzpicture}[node distance=2cm]
+    C --- |Transformada Wavelet| C1[Energía, Porcentaje de Energía, Media, Desviación Estándar]
+    C --- |Amplitud Pico a Pico| C2[Diferencia entre el valor máximo y mínimo de la señal]
+    C --- |Entropía| C3[Entropía de Shannon, Renyi y Tsallis]
+    C --- |Potencia Espectral Relativa| C4[Análisis en bandas Delta, Theta, Alpha, Beta, Gamma]
+    C --- |Parámetros de Hjorth| C5[Actividad, Movilidad, Complejidad]
+    C --- |Parámetros Armónicos| C6[Frecuencia Central, Ancho de Banda, Valor Espectral en la Frecuencia Central]
+    C --- |Coeficientes Autoregresivos| C7[Estimación de coeficientes AR y estadísticas]
+    C --- |Percentiles| C8[Percentiles 25, 50 y 75]
 
-\node (A) [process, fill=orange] {Adquisición de Datos};
-\node (B) [process, below of=A, fill=cyan] {Preprocesamiento de Señales EEG};
-\node (C) [process, below of=B, fill=lime] {Extracción de Características};
-\node (D) [process, below of=C, fill=magenta] {Modelado con Echo State Network (ESN)};
-\node (E) [process, below of=D, fill=yellow] {Análisis de Resultados};
+    D --- |Reservoir Computing| D1[Utilización de modelo ESN, ajuste de parámetros]
+    D --- |Entrenamiento y Validación| D2[División de datos, entrenamiento y validación cruzada]
 
-\draw [arrow] (A) -- (B);
-\draw [arrow] (B) -- (C);
-\draw [arrow] (C) -- (D);
-\draw [arrow] (D) -- (E);
-
-\node (A1) [process, right of=A, xshift=5cm, fill=orange!50] {Reclutamiento de dos grupos: jóvenes adultos y adultos mayores};
-\node (A2) [process, below of=A1, fill=orange!50] {Grabación de señales EEG en estado de reposo};
-\node (A3) [process, below of=A2, fill=orange!50] {Uso de un sistema de adquisición de EEG con múltiples canales};
-
-\draw [arrow] (A) -- (A1);
-\draw [arrow] (A1) -- (A2);
-\draw [arrow] (A2) -- (A3);
-
-\node (B1) [process, right of=B, xshift=5cm, fill=cyan!50] {Aplicar filtro de banda (0.2-30 Hz)};
-\node (B2) [process, below of=B1, fill=cyan!50] {Uso de ICA para eliminar artefactos de movimiento ocular y musculares};
-\node (B3) [process, below of=B2, fill=cyan!50] {Dividir señales EEG en ventanas de tiempo};
-
-\draw [arrow] (B) -- (B1);
-\draw [arrow] (B1) -- (B2);
-\draw [arrow] (B2) -- (B3);
-
-\node (C1) [process, right of=C, xshift=5cm, fill=lime!50] {Transformada Wavelet: Energía, Porcentaje de Energía, Media, Desviación Estándar};
-\node (C2) [process, below of=C1, fill=lime!50] {Amplitud Pico a Pico: Diferencia entre el valor máximo y mínimo de la señal};
-\node (C3) [process, below of=C2, fill=lime!50] {Entropía: Entropía de Shannon, Renyi y Tsallis};
-\node (C4) [process, below of=C3, fill=lime!50] {Potencia Espectral Relativa: Análisis en bandas Delta, Theta, Alpha, Beta, Gamma};
-\node (C5) [process, below of=C4, fill=lime!50] {Parámetros de Hjorth: Actividad, Movilidad, Complejidad};
-\node (C6) [process, below of=C5, fill=lime!50] {Parámetros Armónicos: Frecuencia Central, Ancho de Banda, Valor Espectral en la Frecuencia Central};
-\node (C7) [process, below of=C6, fill=lime!50] {Coeficientes Autoregresivos: Estimación de coeficientes AR y estadísticas};
-\node (C8) [process, below of=C7, fill=lime!50] {Percentiles: Percentiles 25, 50 y 75};
-
-\draw [arrow] (C) -- (C1);
-\draw [arrow] (C1) -- (C2);
-\draw [arrow] (C2) -- (C3);
-\draw [arrow] (C3) -- (C4);
-\draw [arrow] (C4) -- (C5);
-\draw [arrow] (C5) -- (C6);
-\draw [arrow] (C6) -- (C7);
-\draw [arrow] (C7) -- (C8);
-
-\node (D1) [process, right of=D, xshift=5cm, fill=magenta!50] {Reservoir Computing: Utilización de modelo ESN, ajuste de parámetros};
-\node (D2) [process, below of=D1, fill=magenta!50] {Entrenamiento y Validación: División de datos, entrenamiento y validación cruzada};
-
-\draw [arrow] (D) -- (D1);
-\draw [arrow] (D1) -- (D2);
-
-\node (E1) [process, right of=E, xshift=5cm, fill=yellow!50] {Evaluación del Modelo: Medición de precisión, sensibilidad, especificidad, AUC-ROC};
-\node (E2) [process, below of=E1, fill=yellow!50] {Identificación de Patrones: Análisis de patrones, matriz de similitud, visualización de características relevantes};
-
-\draw [arrow] (E) -- (E1);
-\draw [arrow] (E1) -- (E2);
-
-\end{tikzpicture}
-
-\end{document}
+    E --- |Evaluación del Modelo| E1[Medición de precisión, sensibilidad, especificidad, AUC-ROC]
+    E --- |Identificación de Patrones| E2[Análisis de patrones en la dinámica temporal, matriz de similitud, visualización de características relevantes]
 ```
 ### 1. Adquisición de Datos
 - **Sujetos**: Reclutamiento de dos grupos de sujetos, jóvenes adultos y adultos mayores.

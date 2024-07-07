@@ -46,7 +46,89 @@ Además hay que tener en cuena que se debe instarlar torch, dependerá del siste
 Puedes utilizar tanto el código que hay en los notebooks como los diferentes scripts existentes. Modifica y crea tus propios notebook con ayuda de los diferentes módulos desarrollados que contienen tanto el API del RC ESN como clases y funciones auxiliares para el tratamiento de este tipo de datos.
 
 ## Procesos Desarrollados
+# Diagrama de Procesos
 
+## ![#FF5733](https://via.placeholder.com/15/FF5733/000000?text=+) Adquisición de Datos
+### Sujetos
+- Reclutamiento de dos grupos de sujetos: jóvenes adultos y adultos mayores.
+- Se requiere un consentimiento informado y la selección debe cumplir con criterios específicos para asegurar homogeneidad en los grupos.
+
+### Condiciones
+- Grabación de señales EEG en estado de reposo.
+- Ambiente controlado para minimizar el ruido y las distracciones externas.
+
+### Equipamiento
+- Utilización de un sistema de adquisición de EEG con múltiples canales (ej. 32 o 64 canales).
+- Asegurarse de que el equipamiento esté correctamente calibrado y en buen estado.
+
+## ![#33C4FF](https://via.placeholder.com/15/33C4FF/000000?text=+) Preprocesamiento de Señales EEG
+### Filtrado
+- Aplicar un filtro de banda (ej. 0.2-30 Hz) para eliminar artefactos de baja y alta frecuencia.
+- Asegurar la preservación de las señales relevantes para el análisis.
+
+### Corrección de Artefactos
+- Utilización de técnicas como Independent Component Analysis (ICA) para eliminar artefactos de movimiento ocular y musculares.
+- Verificación manual de la efectividad de la corrección.
+
+### Segmentación
+- Dividir las señales EEG en ventanas de tiempo (ej. epochs de 3 segundos sin solapamiento).
+- Solo realizar este paso si se va a proceder con la extracción de características.
+
+## ![#33FF57](https://via.placeholder.com/15/33FF57/000000?text=+) Extracción de Características
+### Transformada Wavelet (MODWT)
+- Energía, Porcentaje de Energía, Media, Desviación Estándar.
+- Permite analizar la señal en diferentes escalas de tiempo-frecuencia.
+
+### Amplitud Pico a Pico
+- Diferencia entre el valor máximo y mínimo de la señal en cada ventana.
+- Indicador simple pero efectivo de la variabilidad de la señal.
+
+### Entropía
+- Entropía de Shannon, Renyi y Tsallis.
+- Medidas de la complejidad y desorden de la señal.
+
+### Potencia Espectral Relativa (RSP)
+- Potencia espectral relativa en diferentes sub-bandas de frecuencia (Delta, Theta, Alpha, Beta, Gamma).
+- Análisis de la distribución de la potencia de la señal en distintas bandas.
+
+### Parámetros de Hjorth
+- Actividad, Movilidad, Complejidad.
+- Características que describen la forma y la variabilidad de la señal.
+
+### Parámetros Armónicos
+- Frecuencia Central, Ancho de Banda, Valor Espectral en la Frecuencia Central.
+- Análisis de las propiedades armónicas de la señal.
+
+### Coeficientes Autoregresivos (AR)
+- Estimación de coeficientes AR y sus estadísticas (media y desviación estándar).
+- Modelo predictivo de la señal basado en sus valores pasados.
+
+### Percentiles
+- Percentiles 25, 50 y 75.
+- Medidas estadísticas que ofrecen información sobre la distribución de la señal.
+
+## ![#FF33A1](https://via.placeholder.com/15/FF33A1/000000?text=+) Modelado con Echo State Network (ESN)
+### Reservoir Computing
+- Utilización de un modelo ESN que consiste en una red recurrente con una gran cantidad de neuronas y conexiones aleatorias.
+- Ajuste de los parámetros del ESN (ej. tamaño del reservoir, densidad de conexiones, factor de escala de las conexiones).
+- Permite capturar la dinámica temporal compleja de las señales EEG.
+
+### Entrenamiento y Validación
+- División de los datos en conjuntos de entrenamiento y prueba.
+- Entrenamiento del ESN con el conjunto de datos de entrenamiento.
+- Validación cruzada para evitar sobreajuste y asegurar la generalización del modelo.
+
+## ![#FFD633](https://via.placeholder.com/15/FFD633/000000?text=+) Análisis de Resultados
+### Evaluación del Modelo
+- Medición de la precisión del modelo en la clasificación de las señales EEG entre jóvenes adultos y adultos mayores.
+- Utilización de métricas como precisión, sensibilidad, especificidad y área bajo la curva ROC (AUC-ROC).
+- Comparación de los resultados con modelos previos para validar la efectividad del ESN.
+
+### Identificación de Patrones
+- Análisis de los patrones en la dinámica temporal de las señales EEG identificados por el ESN.
+- Utilización de la matriz de similitud para comprobar los distintos patrones de cada sujeto.
+- Visualización de las características más relevantes que permiten la distinción entre los dos grupos.
+- Interpretación de los hallazgos en el contexto neurofisiológico.
 ### 1. Adquisición de Datos
 - **Sujetos**: Reclutamiento de dos grupos de sujetos, jóvenes adultos y adultos mayores.
 - **Condiciones**: Grabación de señales EEG en estado de reposo.

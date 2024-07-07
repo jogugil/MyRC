@@ -46,89 +46,82 @@ Además hay que tener en cuena que se debe instarlar torch, dependerá del siste
 Puedes utilizar tanto el código que hay en los notebooks como los diferentes scripts existentes. Modifica y crea tus propios notebook con ayuda de los diferentes módulos desarrollados que contienen tanto el API del RC ESN como clases y funciones auxiliares para el tratamiento de este tipo de datos.
 
 ## Procesos Desarrollados
-# Diagrama de Procesos
+ 
+### Diagrama en LaTeX (con TikZ)
 
-## ![#FF5733](https://via.placeholder.com/15/FF5733/000000?text=+) Adquisición de Datos
-### Sujetos
-- Reclutamiento de dos grupos de sujetos: jóvenes adultos y adultos mayores.
-- Se requiere un consentimiento informado y la selección debe cumplir con criterios específicos para asegurar homogeneidad en los grupos.
+```latex
+\documentclass{article}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows}
 
-### Condiciones
-- Grabación de señales EEG en estado de reposo.
-- Ambiente controlado para minimizar el ruido y las distracciones externas.
+\tikzstyle{process} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=orange!30]
+\tikzstyle{arrow} = [thick,->,>=stealth]
 
-### Equipamiento
-- Utilización de un sistema de adquisición de EEG con múltiples canales (ej. 32 o 64 canales).
-- Asegurarse de que el equipamiento esté correctamente calibrado y en buen estado.
+\begin{document}
 
-## ![#33C4FF](https://via.placeholder.com/15/33C4FF/000000?text=+) Preprocesamiento de Señales EEG
-### Filtrado
-- Aplicar un filtro de banda (ej. 0.2-30 Hz) para eliminar artefactos de baja y alta frecuencia.
-- Asegurar la preservación de las señales relevantes para el análisis.
+\begin{tikzpicture}[node distance=2cm]
 
-### Corrección de Artefactos
-- Utilización de técnicas como Independent Component Analysis (ICA) para eliminar artefactos de movimiento ocular y musculares.
-- Verificación manual de la efectividad de la corrección.
+\node (A) [process, fill=orange] {Adquisición de Datos};
+\node (B) [process, below of=A, fill=cyan] {Preprocesamiento de Señales EEG};
+\node (C) [process, below of=B, fill=lime] {Extracción de Características};
+\node (D) [process, below of=C, fill=magenta] {Modelado con Echo State Network (ESN)};
+\node (E) [process, below of=D, fill=yellow] {Análisis de Resultados};
 
-### Segmentación
-- Dividir las señales EEG en ventanas de tiempo (ej. epochs de 3 segundos sin solapamiento).
-- Solo realizar este paso si se va a proceder con la extracción de características.
+\draw [arrow] (A) -- (B);
+\draw [arrow] (B) -- (C);
+\draw [arrow] (C) -- (D);
+\draw [arrow] (D) -- (E);
 
-## ![#33FF57](https://via.placeholder.com/15/33FF57/000000?text=+) Extracción de Características
-### Transformada Wavelet (MODWT)
-- Energía, Porcentaje de Energía, Media, Desviación Estándar.
-- Permite analizar la señal en diferentes escalas de tiempo-frecuencia.
+\node (A1) [process, right of=A, xshift=5cm, fill=orange!50] {Reclutamiento de dos grupos: jóvenes adultos y adultos mayores};
+\node (A2) [process, below of=A1, fill=orange!50] {Grabación de señales EEG en estado de reposo};
+\node (A3) [process, below of=A2, fill=orange!50] {Uso de un sistema de adquisición de EEG con múltiples canales};
 
-### Amplitud Pico a Pico
-- Diferencia entre el valor máximo y mínimo de la señal en cada ventana.
-- Indicador simple pero efectivo de la variabilidad de la señal.
+\draw [arrow] (A) -- (A1);
+\draw [arrow] (A1) -- (A2);
+\draw [arrow] (A2) -- (A3);
 
-### Entropía
-- Entropía de Shannon, Renyi y Tsallis.
-- Medidas de la complejidad y desorden de la señal.
+\node (B1) [process, right of=B, xshift=5cm, fill=cyan!50] {Aplicar filtro de banda (0.2-30 Hz)};
+\node (B2) [process, below of=B1, fill=cyan!50] {Uso de ICA para eliminar artefactos de movimiento ocular y musculares};
+\node (B3) [process, below of=B2, fill=cyan!50] {Dividir señales EEG en ventanas de tiempo};
 
-### Potencia Espectral Relativa (RSP)
-- Potencia espectral relativa en diferentes sub-bandas de frecuencia (Delta, Theta, Alpha, Beta, Gamma).
-- Análisis de la distribución de la potencia de la señal en distintas bandas.
+\draw [arrow] (B) -- (B1);
+\draw [arrow] (B1) -- (B2);
+\draw [arrow] (B2) -- (B3);
 
-### Parámetros de Hjorth
-- Actividad, Movilidad, Complejidad.
-- Características que describen la forma y la variabilidad de la señal.
+\node (C1) [process, right of=C, xshift=5cm, fill=lime!50] {Transformada Wavelet: Energía, Porcentaje de Energía, Media, Desviación Estándar};
+\node (C2) [process, below of=C1, fill=lime!50] {Amplitud Pico a Pico: Diferencia entre el valor máximo y mínimo de la señal};
+\node (C3) [process, below of=C2, fill=lime!50] {Entropía: Entropía de Shannon, Renyi y Tsallis};
+\node (C4) [process, below of=C3, fill=lime!50] {Potencia Espectral Relativa: Análisis en bandas Delta, Theta, Alpha, Beta, Gamma};
+\node (C5) [process, below of=C4, fill=lime!50] {Parámetros de Hjorth: Actividad, Movilidad, Complejidad};
+\node (C6) [process, below of=C5, fill=lime!50] {Parámetros Armónicos: Frecuencia Central, Ancho de Banda, Valor Espectral en la Frecuencia Central};
+\node (C7) [process, below of=C6, fill=lime!50] {Coeficientes Autoregresivos: Estimación de coeficientes AR y estadísticas};
+\node (C8) [process, below of=C7, fill=lime!50] {Percentiles: Percentiles 25, 50 y 75};
 
-### Parámetros Armónicos
-- Frecuencia Central, Ancho de Banda, Valor Espectral en la Frecuencia Central.
-- Análisis de las propiedades armónicas de la señal.
+\draw [arrow] (C) -- (C1);
+\draw [arrow] (C1) -- (C2);
+\draw [arrow] (C2) -- (C3);
+\draw [arrow] (C3) -- (C4);
+\draw [arrow] (C4) -- (C5);
+\draw [arrow] (C5) -- (C6);
+\draw [arrow] (C6) -- (C7);
+\draw [arrow] (C7) -- (C8);
 
-### Coeficientes Autoregresivos (AR)
-- Estimación de coeficientes AR y sus estadísticas (media y desviación estándar).
-- Modelo predictivo de la señal basado en sus valores pasados.
+\node (D1) [process, right of=D, xshift=5cm, fill=magenta!50] {Reservoir Computing: Utilización de modelo ESN, ajuste de parámetros};
+\node (D2) [process, below of=D1, fill=magenta!50] {Entrenamiento y Validación: División de datos, entrenamiento y validación cruzada};
 
-### Percentiles
-- Percentiles 25, 50 y 75.
-- Medidas estadísticas que ofrecen información sobre la distribución de la señal.
+\draw [arrow] (D) -- (D1);
+\draw [arrow] (D1) -- (D2);
 
-## ![#FF33A1](https://via.placeholder.com/15/FF33A1/000000?text=+) Modelado con Echo State Network (ESN)
-### Reservoir Computing
-- Utilización de un modelo ESN que consiste en una red recurrente con una gran cantidad de neuronas y conexiones aleatorias.
-- Ajuste de los parámetros del ESN (ej. tamaño del reservoir, densidad de conexiones, factor de escala de las conexiones).
-- Permite capturar la dinámica temporal compleja de las señales EEG.
+\node (E1) [process, right of=E, xshift=5cm, fill=yellow!50] {Evaluación del Modelo: Medición de precisión, sensibilidad, especificidad, AUC-ROC};
+\node (E2) [process, below of=E1, fill=yellow!50] {Identificación de Patrones: Análisis de patrones, matriz de similitud, visualización de características relevantes};
 
-### Entrenamiento y Validación
-- División de los datos en conjuntos de entrenamiento y prueba.
-- Entrenamiento del ESN con el conjunto de datos de entrenamiento.
-- Validación cruzada para evitar sobreajuste y asegurar la generalización del modelo.
+\draw [arrow] (E) -- (E1);
+\draw [arrow] (E1) -- (E2);
 
-## ![#FFD633](https://via.placeholder.com/15/FFD633/000000?text=+) Análisis de Resultados
-### Evaluación del Modelo
-- Medición de la precisión del modelo en la clasificación de las señales EEG entre jóvenes adultos y adultos mayores.
-- Utilización de métricas como precisión, sensibilidad, especificidad y área bajo la curva ROC (AUC-ROC).
-- Comparación de los resultados con modelos previos para validar la efectividad del ESN.
+\end{tikzpicture}
 
-### Identificación de Patrones
-- Análisis de los patrones en la dinámica temporal de las señales EEG identificados por el ESN.
-- Utilización de la matriz de similitud para comprobar los distintos patrones de cada sujeto.
-- Visualización de las características más relevantes que permiten la distinción entre los dos grupos.
-- Interpretación de los hallazgos en el contexto neurofisiológico.
+\end{document}
+```
 ### 1. Adquisición de Datos
 - **Sujetos**: Reclutamiento de dos grupos de sujetos, jóvenes adultos y adultos mayores.
 - **Condiciones**: Grabación de señales EEG en estado de reposo.

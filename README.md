@@ -52,7 +52,7 @@ Puedes utilizar tanto el código que hay en los notebooks como los diferentes sc
 graph TD;
     A[Adquisición de Datos] --> B[Preprocesamiento de Señales EEG]
     B --> C[Extracción de Características]
-    C --> D[Modelado con Echo State Network (ESN)]
+    C --> D[Modelado con Echo State Network]
     D --> E[Análisis de Resultados]
 
     A --- |Sujetos| A1[Reclutamiento de dos grupos: jóvenes adultos y adultos mayores]

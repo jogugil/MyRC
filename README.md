@@ -197,41 +197,6 @@ eeg_channels = ['Fp1', 'AF7', 'AF3', 'F1', 'F3', 'F5', 'F7', 'FT7',
 eog_channels = ["UP", "DOWN", "LEFT","RIGHT"]
 exg_channels = ['EXG5', 'EXG6', 'EXG7', 'EXG8']
 ```
-# La ***primera fase*** del proyecto fue el ***estudio de este tipo de señales EEG***.
-
-Se crea un script para procesar lso datos raw y crear ficheros con dataset con las señales EEG procesadas.
-
-# La **segunda fase** fue el  ***Procesamiento de Señales EEG***: 
-
-Las señales EEG procesadas permiten la reconstrucción y predicción de patrones temporales. Además, se utiliza tanto el aprendizaje supervisado como no supervisado para extraer características significativas y realizar la clasificación de sujetos. Este preprocesamiento incluye varias etapas esenciales para asegurar la calidad y usabilidad de los datos:
-
-##### Filtrado de Datos
-
-##### Eliminación de Artefactos
-
-
-# la **tercera fase del proyecto** creación API para el uso mode
-
-Se construyó una API configurada mediante un diccionario config. Este diccionario contiene diferentes parámetros que se transforman en hiperparámetros para el modelo, permitiendo una fácil personalización y ajuste del modelo a diferentes necesidades experimentales.
-
-# Entregas presentes en el proyecto 
-
-### Datos Sintéticos
-
-Los datos sintéticos son generados artificialmente para simular situaciones específicas o para llenar lagunas en conjuntos de datos reales. En esta sección, se explica cómo se generaron datos sintéticos para simular señales temporales de los diferentes electrodos en cada EEG de cada sujeto. Se describen los métodos y algoritmos utilizados para generar estos datos sintéticos y cómo se ajustan a las características de los datos reales, incluyendo la adición de ruido para simular condiciones más realistas.
-
-### RC ESN
-
-Se entrega un notebook con el cual se realizó el procesado y tratamiento de los datos reales, creando diferentes datasets con diferentes combinaciones de canales y funcionalidades (frecuencias del filro pasa banda, eliminación o no de artefactos, extracción o no de características).
-
-En el mismo notebook se implementa varios chunks ejemplo del uso del API del RC ESN para la omplementaión de m´ñtodos no supercisaos y obtención de clústers de sujetos (jovenes adultos y mayores). Así como el uso de readout para la clasificación supervisada de lso sujetos. 
-
-Además se presentan diferentes scripts de python donde se peuden ejecutar el mismo código comentado. 
-Se aportan difernetes scripts con algoritmo geneticos y probabilidad bayesiana para la búsqueda, a modo gridsearch, de los valores óptimos para aquellos hiperparñametros más omportantes.
-
-### Deep ESN
-
-Se entrega un notebook que contiene una posible implementación de un modelo DeepESN con el modelo ESN implementado en el proyecto. Solo se implementa el modelo DeepESN pero no se ha utilizado en el proyecto ni se ha estudiado una posible optimización de la arquitectura. Se deja como trabajo futuro.
 
 # Resultados
 

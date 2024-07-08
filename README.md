@@ -50,46 +50,47 @@ Puedes utilizar tanto el código que hay en los notebooks como los diferentes sc
 
 ```mermaid
 graph TD;
-    A[Adquisición de Datos] --> B[Preprocesamiento]
+A[Adquisición de Datos] --> B[Preprocesamiento]
     B --> C[Extracción de Características]
     C --> D[Modelado con ESN]
     D --> E[Análisis de Resultados]
 
-    subgraph "Adquisición de Datos"
-        A1[Sujetos: Jóvenes adultos y adultos mayores]
-        A2[Condiciones: Grabación de señales EEG en reposo]
-        A3[Equipamiento: Sistema EEG de múltiples canales]
+    subgraph A[Adquisición de Datos]
+        A1[Sujetos]
+        A2[Condiciones]
+        A3[Equipamiento]
     end
 
-    subgraph "Preprocesamiento de Señales EEG"
-        B1[Filtrado: Filtro de banda 0.2-30 Hz]
-        B2[Corrección de Artefactos: ICA]
-        B3[Segmentación: Ventanas de 3 segundos, opcional]
+    subgraph B[Preprocesamiento]
+        B1[Filtrado]
+        B2[Corrección de Artefactos]
+        B3[Segmentación]
     end
 
-    subgraph "Extracción de Características"
-        C1[Wavelet MODWT: Energía, Porcentaje de Energía, Media, Desviación Estándar]
+    subgraph C[Extracción de Características]
+        C1[Wavelet MODWT]
         C2[Amplitud Pico a Pico]
-        C3[Entropía: Shannon, Renyi, Tsallis]
+        C3[Entropía]
         C4[Potencia Espectral Relativa]
-        C5[Parámetros de Hjorth: Actividad, Movilidad, Complejidad]
-        C6[Parámetros Armónicos: Frecuencia Central, Ancho de Banda, Valor Espectral]
+        C5[Parámetros de Hjorth]
+        C6[Parámetros Armónicos]
         C7[Coeficientes Autoregresivos]
-        C8[Percentiles: 25, 50, 75]
+        C8[Percentiles]
     end
 
-    subgraph "Modelado con ESN"
-        D1[Reservoir Computing: Modelo ESN con red recurrente]
-        D2[Ajuste de parámetros del ESN]
-        D3[Entrenamiento con características extraídas]
-        D4[División de datos: Entrenamiento y prueba]
-        D5[Validación cruzada]
+    subgraph D[Modelado con ESN]
+        D1[Reservoir Computing]
+        D2[Ajuste de Parámetros]
+        D3[Entrenamiento]
+        D4[División de Datos]
+        D5[Validación]
     end
 
-    subgraph "Análisis de Resultados"
-        E1[Evaluación del modelo: Precisión, Sensibilidad, Especificidad, AUC-ROC]
-        E2[Identificación de patrones: Análisis de dinámica temporal, Visualización de características]
+    subgraph E[Análisis de Resultados]
+        E1[Evaluación del Modelo]
+        E2[Identificación de Patrones]
     end
+
 ```
 
 ### 1. Adquisición de Datos

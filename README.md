@@ -52,31 +52,34 @@ Puedes utilizar tanto el código que hay en los notebooks como los diferentes sc
 graph TD;
     A[Adquisición de Datos] --> B[Preprocesamiento de Señales EEG]
     B --> C[Extracción de Características]
-    C --> D[Modelado con Echo State Network]
+    C --> D[Modelado con ESN]
     D --> E[Análisis de Resultados]
 
-    A --- |Sujetos| A1[Reclutamiento de dos grupos: jóvenes adultos y adultos mayores]
-    A --- |Condiciones| A2[Grabación de señales EEG en estado de reposo]
-    A --- |Equipamiento| A3[Uso de un sistema de adquisición de EEG con múltiples canales]
+    A --> A1[Sujetos: Jóvenes adultos y adultos mayores]
+    A --> A2[Condiciones: Grabación de señales EEG en estado de reposo]
+    A --> A3[Equipamiento: Sistema de adquisición de EEG con múltiples canales]
 
-    B --- |Filtrado| B1[Aplicar filtro de banda 0.2-30 Hz]
-    B --- |Corrección de Artefactos| B2[Uso de ICA para eliminar artefactos de movimiento ocular y musculares]
-    B --- |Segmentación| B3[Dividir señales EEG en ventanas de tiempo]
+    B --> B1[Filtrado: Aplicar filtro de banda de 0.2-30 Hz]
+    B --> B2[Corrección de Artefactos: Utilización de ICA]
+    B --> B3[Segmentación: Dividir señales EEG en ventanas de tiempo, epochs de 3 segundos, opcional]
 
-    C --- |Transformada Wavelet| C1[Energía, Porcentaje de Energía, Media, Desviación Estándar]
-    C --- |Amplitud Pico a Pico| C2[Diferencia entre el valor máximo y mínimo de la señal]
-    C --- |Entropía| C3[Entropía de Shannon, Renyi y Tsallis]
-    C --- |Potencia Espectral Relativa| C4[Análisis en bandas Delta, Theta, Alpha, Beta, Gamma]
-    C --- |Parámetros de Hjorth| C5[Actividad, Movilidad, Complejidad]
-    C --- |Parámetros Armónicos| C6[Frecuencia Central, Ancho de Banda, Valor Espectral en la Frecuencia Central]
-    C --- |Coeficientes Autoregresivos| C7[Estimación de coeficientes AR y estadísticas]
-    C --- |Percentiles| C8[Percentiles 25, 50 y 75]
+    C --> C1[Transformada Wavelet MODWT: Energía, Porcentaje de Energía, Media, Desviación Estándar]
+    C --> C2[Amplitud Pico a Pico: Diferencia entre valor máximo y mínimo]
+    C --> C3[Entropía: Shannon, Renyi, Tsallis]
+    C --> C4[Potencia Espectral Relativa RSP: Diferentes sub-bandas de frecuencia]
+    C --> C5[Parámetros de Hjorth: Actividad, Movilidad, Complejidad]
+    C --> C6[Parámetros Armónicos: Frecuencia Central, Ancho de Banda, Valor Espectral en Frecuencia Central]
+    C --> C7[Coeficientes Autoregresivos AR: Estimación y estadísticas]
+    C --> C8[Percentiles: 25, 50, 75]
 
-    D --- |Reservoir Computing| D1[Utilización de modelo ESN, ajuste de parámetros]
-    D --- |Entrenamiento y Validación| D2[División de datos, entrenamiento y validación cruzada]
+    D --> D1[Reservoir Computing: Modelo ESN con red recurrente]
+    D --> D2[Ajuste de parámetros del ESN: Tamaño del reservoir, densidad de conexiones, factor de escala]
+    D --> D3[Entrenamiento con características extraídas]
+    D --> D4[División de datos: Conjuntos de entrenamiento y prueba]
+    D --> D5[Entrenamiento y Validación: Validación cruzada]
 
-    E --- |Evaluación del Modelo| E1[Medición de precisión, sensibilidad, especificidad, AUC-ROC]
-    E --- |Identificación de Patrones| E2[Análisis de patrones en la dinámica temporal, matriz de similitud, visualización de características relevantes]
+    E --> E1[Evaluación del modelo: Precisión, Sensibilidad, Especificidad, AUC-ROC]
+    E --> E2[Identificación de patrones: Análisis de dinámica temporal, Visualización de características]
 ```
 
 ### 1. Adquisición de Datos

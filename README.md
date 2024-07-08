@@ -59,7 +59,7 @@ graph TD;
     A --- |Condiciones| A2[Grabación de señales EEG en estado de reposo]
     A --- |Equipamiento| A3[Uso de un sistema de adquisición de EEG con múltiples canales]
 
-    B --- |Filtrado| B1[Aplicar filtro de banda (0.2-30 Hz)]
+    B --- |Filtrado| B1[Aplicar filtro de banda 0.2-30 Hz]
     B --- |Corrección de Artefactos| B2[Uso de ICA para eliminar artefactos de movimiento ocular y musculares]
     B --- |Segmentación| B3[Dividir señales EEG en ventanas de tiempo]
 
@@ -78,6 +78,7 @@ graph TD;
     E --- |Evaluación del Modelo| E1[Medición de precisión, sensibilidad, especificidad, AUC-ROC]
     E --- |Identificación de Patrones| E2[Análisis de patrones en la dinámica temporal, matriz de similitud, visualización de características relevantes]
 ```
+
 ### 1. Adquisición de Datos
 - **Sujetos**: Reclutamiento de dos grupos de sujetos, jóvenes adultos y adultos mayores.
 - **Condiciones**: Grabación de señales EEG en estado de reposo.

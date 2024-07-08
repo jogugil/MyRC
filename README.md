@@ -71,10 +71,10 @@ graph TD;
         C1[Wavelet MODWT: Energía, Porcentaje de Energía, Media, Desviación Estándar]
         C2[Amplitud Pico a Pico]
         C3[Entropía: Shannon, Renyi, Tsallis]
-        C4[Potencia Espectral Relativa RSP]
+        C4[Potencia Espectral Relativa]
         C5[Parámetros de Hjorth: Actividad, Movilidad, Complejidad]
         C6[Parámetros Armónicos: Frecuencia Central, Ancho de Banda, Valor Espectral]
-        C7[Coeficientes Autoregresivos AR]
+        C7[Coeficientes Autoregresivos]
         C8[Percentiles: 25, 50, 75]
     end
 

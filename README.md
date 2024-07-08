@@ -1,4 +1,5 @@
-# Desarrollo Framework del modelo RC-ESN para el Procesado y Estudio de Señales EEG <img src="https://github.com/jogugil/MyRC/assets/15160072/81b9041b-0e3e-47c4-bea6-1beac1d1ae46" alt="imagen" style="float: right; max-width: 100px; margin-left: 5px;">
+# Desarrollo Framework del modelo RC-ESN para el Procesado y Estudio de Señales EEG  <img src="https://github.com/jogugil/MyRC/assets/15160072/81b9041b-0e3e-47c4-bea6-1beac1d1ae46" alt="imagen" style="max-width: 400px; display: block; margin-left: auto; margin-right: auto;">
+
 
 ## Objetivo
 El objetivo principal es crear un framework que incluya diferentes librerías de Python, permitiendo el procesamiento y estudio de señales EEG mediante un modelo de Reservoir Computing.

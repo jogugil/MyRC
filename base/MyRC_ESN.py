@@ -725,7 +725,7 @@ class MyRC:
         self.mts_rep                = self.config ['mts_rep']
         self.w_ridge_embedding      = self.config ['w_ridge_embedding']
         self.w_ridge                = self.config ['w_ridge']
-        self.w_l2                   = self.config ['w_l2']
+        self.w_l2                   = self.config ['mlp_w_l2']
         self.svm_C                  = self.config ['svm_C']
         self.svm_kernel             = self.config ['svm_kernel'] 
         self.svm_gamma              = self.config ['svm_gamma']
@@ -733,7 +733,7 @@ class MyRC:
         self.mlp_batch_size         = self.config ['mlp_batch_size']
         self.mlp_learning_rate      = self.config ['mlp_learning_rate']
         self.mlp_learning_rate_type = self.config ['mlp_learning_rate_type']
-        self.num_epochs             = self.config ['num_epochs']
+        self.num_epochs             = self.config ['mlp_num_epochs']
         self.nonlinearity           = self.config ['nonlinearity']
         self.mts_rep                = self.config ['mts_rep']
         self.dimred_method          = self.config ['dimred_method']
@@ -756,9 +756,9 @@ class MyRC:
             if self.readout_type == 'lin': # Ridge regression
                 self.readout = Ridge (alpha = self.w_ridge, random_state = 0)
             elif self.readout_type == 'svm': # SVM readout
-                self.readout = SVC (C=self.svm_C, kernel='precomputed')
+                self.readout = SVC (C=self.svm_C, kernel = self.svm_kernel, probability = True)
             elif self.readout_type == 'ovr': # SVM readout
-                svm_classifier = SVC (kernel = self.svm_kernel, C=self.svm_C,gamma = self.svm_gamma, probability=True)
+                svm_classifier = SVC (kernel = self.svm_kernel, C=self.svm_C,gamma = self.svm_gamma, probability = True)
                 # Utilizar OneVsRestClassifier con el clasificador SVM
                 self.readout = OneVsRestClassifier (svm_classifier)
             elif self.readout_type == 'mlp': # MLP (deep readout)
@@ -771,7 +771,7 @@ class MyRC:
                     learning_rate       = self.mlp_learning_rate_type, # 'constant' or 'adaptive'
                     learning_rate_init  = self.mlp_learning_rate,
                     max_iter            = self.num_epochs,
-                    early_stopping      = True, # if True, set validation_fraction > 0
+                    early_stopping      = False, # if True, set validation_fraction > 0
                     validation_fraction = 0.001 # used for early stopping
                     )
             else:
@@ -874,7 +874,7 @@ class MyRC:
             Args:
             - input_data: Datos de entrada que contienen las señales EEG de cada canal.
             - bidir: Bandera que indica si procesar los datos en dirección bidireccional (por defecto: False).
-            - evaluate: Bandera que indica si estamos en fase de evaluación (por defecto: False).
+            - evaluate: Bandera que indica si queremos o no eliminar transitorios aunqeu por configuracion lo diga (por defecto: False -> aplica lo que indica la configuración).
             
             Returns:
             - out_rc: El último transitorio (último estado de ESN).
@@ -888,7 +888,7 @@ class MyRC:
         # ============ Obtenemos los indies de los trnasitorios a eliminar ==============
         n_drop             = 0
         transients_to_drop = None
-        if not evaluate: # En fase de test o evaluación no se eliminan transitorios
+        if not evaluate: # Hacemos caso a la configuración, Si evaluate == True nunca se eliminan transitorios.
             n_drop = min (self.n_drop, input_data.size(1) - 1)
             transients_to_drop = self._determine_transients_to_drop (n_drop, input_data.size (1)) 
         # ============ Buscamos el estado del RC al procesar la series tmeporales ============
@@ -1023,18 +1023,23 @@ class MyRC:
         elif self.readout_type == 'lin':
             # Ridge regression
             output_rc_layer = self.readout.fit (input_repr, target_data)
+            print (f'lin : output_rc_layer:{output_rc_layer}')
         elif self.readout_type == 'svm':
             # SVM readout
             Ktr = squareform(pdist(input_repr, metric='sqeuclidean'))
             Ktr = np.exp(-self.svm_gamma * Ktr)
-            output_rc_layer = self.readout.fit (Ktr, np.argmax(target_data, axis=1))
+            output_rc_layer = self.readout.fit (Ktr, target_data)
+            print (f'svm : output_rc_layer:{output_rc_layer}')
         elif self.readout_type == 'ovr':
             # SVM ovr readout
-            self.readout.fit (input_repr, target_data)
+            output_rc_layer =self.readout.fit (input_repr, target_data)
+            print (f'ovr : output_rc_layer:{output_rc_layer}')
         elif self.readout_type == 'mlp':
             # MLP (deep readout)
+            print (f'mlp : input_repr:{input_repr.shape}')
+            print (f'mlp : target_data:{target_data}')
             output_rc_layer = self.readout.fit(input_repr, target_data)
-     
+            print (f'mlp : output_rc_layer:{output_rc_layer}')
         return output_rc_layer
     
     def _convert_to_one_hot (self, pred_class_max, num_classes = 2):
@@ -1058,7 +1063,7 @@ class MyRC:
                 one_hot[i, 1] = 1  # Clase 1: 01
 
         return one_hot
-    def _compute_multilabel_test_scores(self, y_pred, Yte, multi_label=True):
+    def _compute_multilabel_test_scores (self, y_pred, Yte, multi_label=True):
         """
             Calcula las métricas de evaluación multilabel para la predicción y los datos de prueba.
         
@@ -1092,7 +1097,8 @@ class MyRC:
         print("Accuracy-Score Multilabel:", accuracy)
     
         return f1, accuracy, confusion_matrices
-    def _evaluate_readout(self, labels, labels_pred, multi_label=True):
+        
+    def _evaluate_readout (self, labels, labels_pred):
         """
         Calcula y muestra varias métricas de evaluación para el clustering, incluyendo la matriz de confusión,
         frecuencia, precisión, recall, F1 score, ROC AUC score y la curva ROC. También muestra el reporte de clasificación.
@@ -1100,52 +1106,29 @@ class MyRC:
         Args:
             labels (array-like): Etiquetas reales.
             labels_pred (array-like): Etiquetas predichas por el modelo de clustering.
-            multi_label (bool): Indica si las métricas deben ser calculadas en un contexto multietiqueta.
         Returns:
             - report: Resumen de las métricas (Accuracy, f1, recall..)
         """
-        
-        if multi_label:
-            # Calcular la matriz de confusión multietiqueta
-            cm = multilabel_confusion_matrix(labels, labels_pred)
-            print("Multilabel Confusion Matrix:")
-            print(cm)
     
-            # Graficar la matriz de confusión para cada etiqueta
-            for i, conf_matrix in enumerate(cm):
-                plt.figure(figsize=(10, 7))
-                sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', cbar=False)
-                plt.xlabel('Predicted')
-                plt.ylabel('Actual')
-                plt.title(f'Confusion Matrix for label {i}')
-                plt.show()
+        # Calcular la matriz de confusión
+        cm = confusion_matrix(labels, labels_pred)
+        print("Confusion Matrix:")
+        print(cm)
     
-            # Calcular otras métricas multietiqueta
-            accuracy = accuracy_score(labels, labels_pred)
-            precision = precision_score(labels, labels_pred, average='weighted')
-            recall = recall_score(labels, labels_pred, average='weighted')
-            f1 = f1_score(labels, labels_pred, average='weighted')
-            roc_auc = roc_auc_score(labels, labels_pred, average='weighted')
-        else:
-            # Calcular la matriz de confusión normal
-            cm = confusion_matrix(labels, labels_pred)
-            print("Confusion Matrix:")
-            print(cm)
+        # Graficar la matriz de confusión
+        plt.figure(figsize=(10, 7))
+        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False, xticklabels=np.unique(labels), yticklabels=np.unique(labels))
+        plt.xlabel('Predicted')
+        plt.ylabel('Actual')
+        plt.title('Confusion Matrix')
+        plt.show()
     
-            # Graficar la matriz de confusión
-            plt.figure(figsize=(10, 7))
-            sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False, xticklabels=np.unique(labels), yticklabels=np.unique(labels))
-            plt.xlabel('Predicted')
-            plt.ylabel('Actual')
-            plt.title('Confusion Matrix')
-            plt.show()
-    
-            # Calcular otras métricas
-            accuracy = accuracy_score(labels, labels_pred)
-            precision = precision_score(labels, labels_pred, average='weighted')
-            recall = recall_score(labels, labels_pred, average='weighted')
-            f1 = f1_score(labels, labels_pred, average='weighted')
-            roc_auc = roc_auc_score(labels, labels_pred)
+        # Calcular otras métricas
+        accuracy = accuracy_score(labels, labels_pred)
+        precision = precision_score(labels, labels_pred, average='weighted')
+        recall = recall_score(labels, labels_pred, average='weighted')
+        f1 = f1_score(labels, labels_pred, average='weighted')
+        roc_auc = roc_auc_score(labels, labels_pred)
     
         print("Accuracy:", accuracy)
         print("Precision:", precision)
@@ -1153,21 +1136,20 @@ class MyRC:
         print("F1 Score:", f1)
         print("ROC AUC Score:", roc_auc)
     
-        if not multi_label:
-            # Calcular la curva ROC solo si no es multietiqueta
-            fpr, tpr, _ = roc_curve(labels, labels_pred)
+        # Calcular la curva ROC
+        fpr, tpr, _ = roc_curve(labels, labels_pred)
     
-            # Graficar la curva ROC
-            plt.figure()
-            plt.plot(fpr, tpr, color='blue', lw=2, label=f'ROC curve (area = {roc_auc:.2f})')
-            plt.plot([0, 1], [0, 1], color='gray', lw=2, linestyle='--')
-            plt.xlim([0.0, 1.0])
-            plt.ylim([0.0, 1.05])
-            plt.xlabel('False Positive Rate')
-            plt.ylabel('True Positive Rate')
-            plt.title('Receiver Operating Characteristic')
-            plt.legend(loc="lower right")
-            plt.show()
+        # Graficar la curva ROC
+        plt.figure()
+        plt.plot(fpr, tpr, color='blue', lw=2, label=f'ROC curve (area = {roc_auc:.2f})')
+        plt.plot([0, 1], [0, 1], color='gray', lw=2, linestyle='--')
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.05])
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.title('Receiver Operating Characteristic')
+        plt.legend(loc="lower right")
+        plt.show()
     
         # Reporte de clasificación
         report = classification_report(labels, labels_pred)
@@ -1182,7 +1164,6 @@ class MyRC:
             "roc_auc": roc_auc,
             "classification_report": report
         }
-  
     def fit (self, input_data, target_data = None):
         '''
             Entrena el modelo ESN con los datos de entrada y opcionalmente con los datos de destino.
@@ -1204,23 +1185,24 @@ class MyRC:
                     Los estados del reservorio reducidos dimensionalmente.
         '''
         representations = []
-         #print (f'fit :  input_data: {input_data.shape}')
+        #print (f'fit :  input_data: {input_data.shape}')
 
         with torch.no_grad ():
             mts_rep_state, n_tr_drop = self._get_states (input_data, self.bidir, evaluate = False)
 
         rc_state = mts_rep_state  # Almacenamos aquellos transitorios que indicamos en configuración
         
-        # print (f'fit :  self.mts_rep_state: {self.mts_rep_state.shape}')
+        #print (f'fit :  self.mts_rep_state: {mts_rep_state.shape}')
 
         # ============ Dimensionality reduction of the reservoir states ============  
         
-        # print (f'fit :  self.dimred_method: {self.dimred_method}')
+        #print (f'fit :  self.dimred_method: {self.dimred_method}')
         if self.dimred_method is not None:
             rc_dim_states = self._apply_dimensionality_reduction (rc_state)
         else:
             rc_dim_states = rc_state
-        #print (f'fit : self.rc_dim_states:{self.rc_dim_states.shape}') 
+            
+        #print (f'fit : rc_dim_states:{rc_dim_states.shape}') 
         
         # ============ Generate representation of the MTS ============
         if self.mts_rep == 'output':
@@ -1246,8 +1228,10 @@ class MyRC:
                 input_repr = rc_state.reshape (rc_state.shape [0], -1)  
         else:
             raise RuntimeError('Invalid representation ID: output, reservoir, state, id, last o mean')
-       # print (f'fit : input_repr:{input_repr.shape}')
+        print (f'fit : input_repr:{input_repr.shape}')
+        
         self.input_repr_tr = input_repr
+        
         # ============ Apply readout ============
         if self.readout_type is not None:
             output_redout_layer = self._compute_readout_layer (input_repr, target_data)
@@ -1274,114 +1258,113 @@ class MyRC:
                 pred_class: numpy.ndarray
                     Clases predichas por el modelo.
         '''
-        print (f'fit_evaluate :Yte: {Yte}') 
+        #print (f'fit_evaluate :Yte: {Yte}') 
         # Nota: En fase de evaluación no se eliminan transitorios
         # ============ Compute reservoir states ============
         with torch.no_grad ():
-            mts_rep_state_xte, n_tr_drop = self._get_states (Xte, self.bidir, evaluate = True)
+            rc_state_xte, n_tr_drop = self._get_states (Xte, self.bidir, evaluate = False)
 
-        print (f'fit_evaluate :mts_rep_state_xte: {mts_rep_state_xte.shape}')    
-        print (f'fit_evaluate :n_tr_drop: {n_tr_drop}')  
+        #print (f'fit_evaluate :rc_state_xte: {rc_state_xte.shape}')    
+        #print (f'fit_evaluate :n_tr_drop: {n_tr_drop}')  
 
         # ============ Dimensionality reduction of the reservoir states   ============
         if self.dimred_method is not None:
-            rc_dim_states_xte = self._apply_dimensionality_reduction (mts_rep_state_xte)
+            rc_dim_state_xte = self._apply_dimensionality_reduction (rc_state_xte)
         else:
-            rc_dim_states_xte = mts_rep_state_xte
+            rc_dim_state_xte = rc_state_xte
             
+        #print (f'fit_evaluate :rc_dim_state_xte: {rc_dim_state_xte.shape}')
         # ============ Generate representation of the MTS ============
+        
         if self.mts_rep == 'output':
-            input_repr_xte = self._compute_output_represtn (rc_dim_states_xte, Xte, n_tr_drop)  
+            input_repr_xte = self._compute_output_represtn (rc_dim_state_xte , Xte, n_tr_drop)  
         elif self.mts_rep == 'reservoir':
-            input_repr_xte = self._compute_reservoir_represtn (rc_dim_states_xte, Xte, n_tr_drop) 
+            input_repr_xte = self._compute_reservoir_represtn (rc_dim_state_xte, Xte, n_tr_drop) 
         elif self.mts_rep == 'last':
-            input_repr_xte = mts_rep_state_xte [:, -1, :]
+            input_repr_xte = rc_state_xte [:, -1, :]
         elif self.mts_rep == 'mean':
-            if isinstance(mts_rep_state_xte, torch.Tensor):
-                input_repr_xte = torch.mean (mts_rep_state_xte, dim = 1)
+            if isinstance(rc_state, torch.Tensor):
+                input_repr_xte = torch.mean (rc_state_xte, dim = 1)
             else:
-                input_repr_xte = np.mean (mts_rep_state_xte, axis = 1)
+                input_repr_xte = np.mean (rc_state_xte, axis = 1)
         elif self.mts_rep == 'id':
-            if isinstance(rc_dim_states, torch.Tensor):
-                input_repr_xte = rc_dim_states_xte.view (rc_dim_states_xte.size (0), -1)
+            if isinstance(rc_dim_state_xte, torch.Tensor):
+                input_repr_xte = rc_dim_state_xte.view (rc_dim_state_xte.size (0), -1)
             else:
-                input_repr_xte = rc_dim_states_xte.reshape (rc_dim_states_xte.shape [0], -1)
+                input_repr_xte = rc_dim_state_xte.reshape (rc_dim_state_xte.shape [0], -1)
         elif self.mts_rep == 'state':
-            if isinstance(rc_dim_states_xte, torch.Tensor):
-                input_repr_xte = rc_dim_states_xte.view (rc_dim_states_xte.size (0), -1)
+            if isinstance(rc_state_xte, torch.Tensor):
+                input_repr_xte = rc_state_xte.view (rc_state_xte.size (0), -1)
             else:
-                input_repr_xte = rc_dim_states_xte.reshape (rc_dim_states_xte.shape [0], -1) 
+                input_repr_xte = rc_state_xte.reshape (rc_state_xte.shape [0], -1)  
         else:
-            raise RuntimeError('Invalid representation ID: output, reservoir, last o mean') 
-            
+            raise RuntimeError('Invalid representation ID: output, reservoir, state, id, last o mean')
+               
+        #print (f'fit_evaluate : input_repr_xte: {input_repr_xte.shape}')
         # ============ Apply readout ============
-        print (f'fit_evaluate :lin :fit_evaluate :self.readout_type : {self.readout_type }')
-        Y_test_int = Yte.astype (int)
-        pred_class = None
-        if self.readout_type == 'lin':  # Linear regression
-            logits = self.readout.predict (input_repr_xte)
-            pred_prob      = 1 / (1 + np.exp(-logits))
-            pred_class_max = np.argmax (logits, axis=1)
-            pred_class     = self._convert_to_one_hot (pred_class_max)
-             
-            print(f'fit_evaluate :lin :logits : {logits}')
-            print(f'fit_evaluate :lin :pred_class : {pred_class}')
-            print(f'fit_evaluate :lin :pred_prob : {pred_prob}')
-            print(f'fit_evaluate :lin :pred_class_max : {pred_class_max}')
-        elif self.readout_type == 'svm':  # SVM readout
-            Kte = cdist (input_repr_xte, self.input_repr_tr, metric = 'sqeuclidean')
-            Kte = np.exp (-self.svm_gamma * Kte)
+        if self.readout_type is not None:
+            #print (f'fit_evaluate : self.readout_type : {self.readout_type }')
+            Y_test_int = Yte.astype (int)
+            pred_class = None
             
-            pred_class            = self.readout.predict (Kte)
-            pred_class_multilabel = np.zeros_like (Y_test_int)
-            
-            for i, label in enumerate(pred_class):
-                pred_class_multilabel [i, label] = 1
+            if self.readout_type == 'lin':  # Linear regression
+                logits = self.readout.predict (input_repr_xte)
+                pred_prob = 1 / (1 + np.exp (-logits))  # Probabilidades calculadas usando la función sigmoide
                 
-            pred_class = pred_class_multilabel
+                #print(f'fit_evaluate :lin :logits : {logits}')
+                #print(f'fit_evaluate :lin :pred_prob : {pred_prob}')
+                
+                if logits.ndim == 1:
+                    pred_class = (pred_prob > self.threshold).astype (int)
+                else:
+                    pred_class = (pred_prob[:, 1] > self.threshold).astype (int)  # Suponiendo que la clase positiva es la columna 1
+                    
+    
+                #print(f'fit_evaluate :lin :pred_class : {pred_class}')
+            elif self.readout_type == 'svm':  # SVM readout
+                #print (f'input_repr_xte: {input_repr_xte.shape}')
+                #print (f'self.input_repr_tr: {self.input_repr_tr.shape}')
+                #print(f'fit_evaluate _SVM:Yte : {Y_test_int}')
+                Kte = cdist (input_repr_xte, self.input_repr_tr, metric = 'sqeuclidean')
+                Kte = np.exp (-self.svm_gamma * Kte)
+                
+                pred_prob = self.readout.predict_proba (Kte)
+                #print(f'fit_evaluate _SVM:pred_prob : {pred_prob}')
+                pred_class = (pred_prob > self.threshold).astype(int) 
+                    
+                pred_class = pred_class [:,1]
+                
+                #print(f'fit_evaluate _SVM:pred_class : {pred_class}')
             
-            print(f'fit_evaluate _SVM:Yte : {Y_test_int}')
-            print(f'fit_evaluate _SVM:pred_class : {pred_class}')
-        
-        elif self.readout_type == 'ovr':  # One-vs-Rest Classifier
-            pred_prob = self.readout.predict_proba (input_repr_xte)
-            print(f'fit_evaluate :ovr :pred_prob : {pred_prob}')
-            pred_class = (pred_prob > self.threshold).astype(int)
-            
-            print(f'fit_evaluate :Yte : {Y_test_int}')
-            print(f'fit_evaluate :pred_class : {pred_class}')
-        
-        elif self.readout_type == 'mlp':  # MLP (deep readout)
-            pred_prob      = self.readout.predict_proba (input_repr_xte)
-            pred_class_max = np.argmax (pred_prob, axis = 1)
-            pred_class     = self._convert_to_one_hot (pred_class_max)
-            
-            print(f'fit_evaluate :mlp :pred_prob : {pred_prob}')
-            print(f'fit_evaluate :mlp :pred_class_max : {pred_class_max}')
-            print(f'fit_evaluate :mlp :pred_class : {pred_class}')
+            elif self.readout_type == 'ovr':  # One-vs-Rest Classifier
+                pred_prob  = self.readout.predict_proba (input_repr_xte)
+                #print(f'fit_evaluate :ovr :pred_prob : {pred_prob}')
+                pred_class = (pred_prob > self.threshold).astype(int)
+                pred_class = pred_class [:,1]
+                #print(f'fit_evaluate :Yte : {Y_test_int}')
+                #print(f'fit_evaluate :pred_class : {pred_class}')
+            elif self.readout_type == 'mlp':  # MLP (deep readout)
+                pred_prob      = self.readout.predict_proba (input_repr_xte)
+                pred_class = np.argmax (pred_prob, axis = 1)
+                
+                #print(f'fit_evaluate :mlp :pred_prob : {pred_prob}')
+                #print(f'fit_evaluate :mlp :pred_class : {pred_class}')
+            else:
+                print("Error while evaluating. When evaluating, we need to have a correct readout (lin, svm, ovr, or mlp).")
+                return None, None, None
         else:
-            print("Error while evaluating. When evaluating, we need to have a correct readout (lin, svm, ovr, or mlp).")
-            return None, None, None
-
-        if pred_class is not None:
-            print(f'fit_evaluate :Yte : {Y_test_int}')
-            print(f'fit_evaluate :pred_class : {pred_class}')
+            pred_class = None
+            print ('The readout class has not been set, so the model evaluation is not performed')
             
-            # f1, accuracy, confusion_matrices = self._compute_multilabel_test_scores (pred_class, Y_test_int)
-            # return pred_class, f1, accuracy, confusion_matrices
-            # {
-             #"accuracy": accuracy,
-             #"precision": precision,
-             #"recall": recall,
-             #"f1": f1,
-             #"roc_auc": roc_auc,
-             #"classification_report": report
-             # }
+        if pred_class is not None:
+            #print(f'fit_evaluate :Yte : {Y_test_int}')
+            #print(f'fit_evaluate :pred_class : {pred_class}')
+            
             metrics  = self._evaluate_readout (Y_test_int, pred_class)
-            return metrics ["classification_report"]
+            return rc_state_xte, rc_dim_state_xte, input_repr_xte, metrics ["classification_report"]
         else:
             # return None, None, None, None
-            return None
+            return rc_state_xte, rc_dim_state_xte, input_repr_xte, None
             
     def generate_representation (self, val_data):
         '''
@@ -1423,6 +1406,277 @@ class MyRC:
         plt.legend ()
         plt.show ()   
 
+class MyDeepRC:
+    def __init__(self, config):
+        self.config = config
+        self.models = []
+        layers_c = config ['layers']
+        for layer_cfg in layers_c:
+            # Creamos y añadimos una instancia de MyESN a la lista de modelos
+            self.models.append (MyESN (layer_cfg))
+
+        self._initialize_hyperparameters ()
+        self._initialize_readout ()
+        self._initialize_dimred_methods ()
+        self._initialize_representation ()
+
+    def _initialize_representation(self):
+        # Initialize ridge regression model
+        if self.mts_rep == 'output' or self.mts_rep == 'reservoir':
+            self._ridge_embedding = Ridge (alpha = self.w_ridge_embedding, fit_intercept = True)
+
+    def _initialize_hyperparameters(self):
+        self.w_ridge                = self.config.get ('w_ridge')
+        self.num_epochs             = self.config.get ('num_epochs')
+        self.nonlinearity           = self.config.get ('nonlinearity')
+        self.bidir                  = self.config.get ('bidir', False)
+        self.threshold              = self.config.get ('threshold')
+        self.n_drop                 = self._determine_n_drop (self.config.get ('n_drop')) # Initialize n_drop
+        self.readout_type           = self.config.get ('readout_type')
+        self.mts_rep                = self.config.get ('mts_rep')
+        self.w_ridge_embedding      = self.config.get ('w_ridge_embedding')
+        self.w_l2                   = self.config.get ('w_l2')
+        self.svm_C                  = self.config.get ('svm_C')
+        self.svm_kernel             = self.config.get ('svm_kernel')
+        self.svm_gamma              = self.config.get ('svm_gamma')
+        self.mlp_layout             = self.config.get ('mlp_layout')
+        self.dimred_method          = self.config.get ('dimred_method')
+        self.n_dim                  = self.config.get ('n_dim')
+        self.mlp_batch_size         = self.config.get ('mlp_batch_size')
+        self.mlp_learning_rate      = self.config.get ('mlp_learning_rate')
+        self.mlp_learning_rate_type = self.config.get ('mlp_learning_rate_type')
+        self.washout                = self.config.get ('washout')
+
+    def _initialize_readout (self):
+        if self.readout_type is not None:
+            if self.readout_type == 'ridge':
+                self.readout = Ridge (alpha = self.w_ridge)
+            elif self.readout_type == 'svm':
+                self.readout = SVC (C = self.svm_C, kernel = 'precomputed')
+            elif self.readout_type == 'ovr':
+                self.readout = OneVsRestClassifier (SVC (kernel = self.svm_kernel, C = self.svm_C, gamma = self.svm_gamma))
+            elif self.readout_type == 'mlp':
+                self.readout = MLPClassifier (
+                    hidden_layer_sizes  = self.mlp_layout,
+                    activation          = self.nonlinearity,
+                    alpha               = self.w_l2,
+                    batch_size          = self.mlp_batch_size,
+                    learning_rate       = self.mlp_learning_rate_type,
+                    learning_rate_init  = self.mlp_learning_rate ,
+                    max_iter            = self.num_epochs,
+                    early_stopping      = False,
+                    validation_fraction = 0.001
+                )
+            else:
+                raise RuntimeError('Invalid readout type')
+
+    def _initialize_dimred_methods (self):
+
+        dimred_method = self.config ['dimred_method']
+        print(f'dimred_method:{dimred_method}')
+        if dimred_method is not None:
+          n_dim = self.config ['n_dim']
+          if dimred_method == 'pca':
+            self.dimred_methods = PCA(n_components=n_dim)
+          elif dimred_method == 'tenpca':
+            self.dimred_methods = tensorPCA(n_components=n_dim)
+          elif dimred_method is None:
+            self.dimred_methods  = None
+          else:
+            raise RuntimeError('Invalid dimred method ID')
+        else:
+          self.dimred_methods  = None
+
+    def _determine_transients_to_drop (self, n_drop, input_timeline_size):
+        """
+            Determina los índices de los transitorios a eliminar según la configuración.
+
+            Args:
+            - n_drop (int): Número de transitorios a eliminar.
+            - input_timeline_size (int): Tamaño total de la línea temporal de entrada.
+
+            Returns:
+            - transients_to_drop (list): Lista de índices de transitorios a eliminar.
+        """
+        transients_to_drop = []
+
+        if n_drop > 0:
+            if self.washout == 'init':
+                transients_to_drop = list (range (n_drop))
+            elif self.washout == 'rand':
+                transients_to_drop = np.random.choice (input_timeline_size, size = n_drop, replace = False)
+            else:
+                transients_to_drop = list (range (n_drop))
+        elif n_drop < 0:
+            # Eliminar todos menos el último transitorio
+            transients_to_drop = list (range (input_timeline_size - 1))
+        else:
+            # No eliminar ningún transitorio
+            transients_to_drop = None
+
+        return transients_to_drop
+
+    def _get_states (self, input_data, bidir = False, evaluate = False):
+
+        input_data       = torch.tensor (input_data, dtype = torch.float32) if not isinstance (input_data, torch.Tensor) else input_data
+        states_per_layer = []
+        current_input    = input_data
+
+        for model in self.models:
+            print (current_input.shape)
+
+            n_drop             = 0
+            transients_to_drop = None
+            if not evaluate: # En fase de test o evaluación no se eliminan transitorios
+                n_drop = min (self.n_drop, input_data.size (1))
+                transients_to_drop = self._determine_transients_to_drop (n_drop, input_data.size (1))
+
+            reservoir_state = self._process_transient_ESN (current_input, model, transients_to_drop)  # Corregido
+
+
+            if bidir:
+                input_data_b      = torch.tensor (current_input.numpy ()[:, ::-1, :].copy(), dtype = torch.float32)
+                reservoir_state_b = self._process_transient_ESN (input_data_b, model, transients_to_drop) # Corregido
+
+                mts_rep_state     = np.concatenate ((reservoir_state, reservoir_state_b), axis = 2)
+            else:
+                mts_rep_state = reservoir_state
+
+            states_per_layer.append(mts_rep_state)  # Corregido
+            current_input = reservoir_state
+
+        return states_per_layer, transients_to_drop
+
+    def _process_transient_ESN (self, X, model, transients_to_drop = None):
+        n_serial = X.size (1)  # número de instantes de la serie temporal
+
+        # Calcular el número de transitorios a eliminar
+        num_transients_to_drop = len(transients_to_drop) if transients_to_drop is not None else 0
+        # print (f'num_transients_to_drop:{num_transients_to_drop}')
+        # Calcular el tamaño de reservoir_state considerando los transitorios a eliminar
+        reservoir_state = torch.zeros ((X.size (0), n_serial  , model.reservoir_size), dtype = torch.float32)
+        rc_state        = torch.zeros ((X.size (0), n_serial - num_transients_to_drop, model.reservoir_size), dtype = torch.float32)
+        # print (f'reservoir_state:{reservoir_state.size()}')
+        # print (f'rc_state:{rc_state.size()}')
+        reservoir_index = 0  # Índice para seguir el estado del reservorio
+
+        for t in range (n_serial):
+            input_sequence = X [:, t, :].float()
+            # print (f't:{t}')
+
+            if transients_to_drop is not None and t in transients_to_drop:
+                continue # Skip processing this transient
+
+            # Process input_sequence with the ESN model
+            reservoir_state = model (input_sequence, reservoir_state, t)
+            # print (f'* reservoir_state:{reservoir_state.size()}')
+
+
+            rc_state [:,reservoir_index,:] = reservoir_state [:,t,:]
+            reservoir_index += 1
+
+            # print (f'* rc_state:{rc_state.size()}')
+
+        if len(rc_state) == 0:
+            return None
+
+        return rc_state
+
+    def _eliminate_transients (self, reservoir_state, num_samples):
+        if self.n_drop > 0:
+            keep_mask = np.ones (num_samples, dtype = bool)
+            keep_mask[:self.n_drop] = False
+            state_matrix = reservoir_state [:, keep_mask, :]
+        else:
+            state_matrix = reservoir_state
+
+        return state_matrix
+
+    def fit (self, input_data, target_data = None):
+
+        with torch.no_grad ():
+            self.states_per_layer, n_tr_drop = self._get_states (input_data, self.bidir, evaluate = False)
+
+        self.final_states = self.states_per_layer [-1]
+        self.red_states   = self._reduce_dimensionality (self.final_states)
+        self.input_repr   = self._generate_representation (input_data, self.red_states)
+
+        if target_data is None or self.readout_type is None:
+            self.output_rc_layer = self.input_repr
+        else:
+            self.output_rc_layer = self._apply_readout (self.input_repr, target_data)
+
+        return self.states_per_layer, self.final_states, self.red_states, self.input_repr, self.output_rc_layer
+
+    def _reduce_dimensionality(self, states):
+        dimred_method = self.dimred_methods
+
+        if dimred_method:
+          if isinstance(dimred_method, PCA):
+            n_samples  = states.shape [0]
+            r_states   = states.reshape(-1, states.shape[2])
+            red_states = dimred_method.fit_transform(r_states)
+            red_states = red_states.reshape(n_samples, -1, red_states.shape[1])
+          elif isinstance (dimred_method, tensorPCA):
+            red_states = dimred_method.fit_transform (states)
+          else:
+            red_states = states
+        else:
+            red_states = states
+
+        return np.real(red_states)
+
+    def _generate_representation(self, input_data, red_states):
+        coeff_tr = []
+        biases_tr = []
+
+        if self.mts_rep == 'output':
+            if self.bidir:
+                input_data = np.concatenate((input_data, input_data[:, ::-1, :]), axis=2)
+            n_idx = self.n_drop if self.n_drop >= 0 else 0
+            for i in range(input_data.shape[0]):
+                self._ridge_embedding.fit(red_states[i, 0:-1, :], input_data[i, n_idx:-1, :])
+                coeff_tr.append(self._ridge_embedding.coef_.ravel())
+                biases_tr.append(self._ridge_embedding.intercept_.ravel())
+            input_repr = np.concatenate((np.vstack(coeff_tr), np.vstack(biases_tr)), axis=1)
+        elif self.mts_rep == 'reservoir':
+            for i in range(input_data.shape[0]):
+                self._ridge_embedding.fit(red_states[i, 0:-1, :], red_states[i, 1:, :])
+                coeff_tr.append(self._ridge_embedding.coef_.ravel())
+                biases_tr.append(self._ridge_embedding.intercept_.ravel())
+            input_repr = np.concatenate((np.vstack(coeff_tr), np.vstack(biases_tr)), axis=1)
+        elif self.mts_rep == 'last':
+            input_repr = red_states[:, -1, :]
+        elif self.mts_rep == 'mean':
+            input_repr = np.mean(red_states, axis=1)
+        else:
+            raise ValueError("Invalid mts_rep type")
+
+        return input_repr
+
+    def _determine_n_drop (self, n_drop_config):
+        if n_drop_config is None:
+            return 0
+        elif n_drop_config == 'all':
+            return -1
+        else:
+            return n_drop_config
+
+    def _apply_readout(self, input_repr, target_data):
+      if self.readout_type is not None:
+        if self.readout_type == 'lin':
+            return self.readout.fit(input_repr, target_data)
+        elif self.readout_type == 'svm':
+            Ktr = squareform(pdist(input_repr, metric='sqeuclidean'))
+            Ktr = np.exp(-self.svm_gamma * Ktr)
+            return self.readout.fit(Ktr, np.argmax(target_data, axis=1))
+        elif self.readout_type == 'ovr':
+            ovr_classifier = OneVsRestClassifier(self.readout)
+            return ovr_classifier.fit(input_repr, np.argmax(target_data, axis=1))
+        elif self.readout_type == 'mlp':
+            return self.readout.fit(input_repr, np.argmax(target_data, axis=1))
+        else:
+            raise RuntimeError('Invalid readout type')
     
 ############################# 
 ## Funciones auxiliares

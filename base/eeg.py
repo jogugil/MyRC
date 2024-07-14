@@ -58,19 +58,18 @@ from sklearn.metrics import (confusion_matrix, precision_score, recall_score,
                              
 from base.ExractFeatures import ExractFeatures                     
 #########MONTAJE Y ASIGNACION DE CANALES ###########
-
 all_channels = ['Fp1', 'AF7', 'AF3', 'F1', 'F3', 'F5',
-            'F7', 'FT7', 'FC5', 'FC3', 'FC1', 'C1',
-            'C3', 'C5', 'T7', 'TP7', 'CP5', 'CP3',
-            'CP1', 'P1', 'P3', 'P5', 'P7', 'P9',
-            'PO7', 'PO3', 'O1', 'Iz', 'Oz', 'POz',
-            'Pz', 'CPz', 'Fpz', 'Fp2', 'AF8', 'AF4',
-            'AFz', 'Fz', 'F2', 'F4', 'F6', 'F8',
-            'FT8', 'FC6', 'FC4', 'FC2', 'FCz', 'Cz',
-            'C2', 'C4', 'C6', 'T8', 'TP8', 'CP6', 'CP4',
-            'CP2', 'P2', 'P4', 'P6', 'P8', 'P10', 'PO8',
-            'PO4', 'O2', 'UP', 'DOWN', 'LEFT', 'RIGHT',
-            'EXG5', 'EXG6', 'EXG7', 'EXG8', 'Status']
+                'F7', 'FT7', 'FC5', 'FC3', 'FC1', 'C1',
+                'C3', 'C5', 'T7', 'TP7', 'CP5', 'CP3',
+                'CP1', 'P1', 'P3', 'P5', 'P7', 'P9',
+                'PO7', 'PO3', 'O1', 'Iz', 'Oz', 'POz',
+                'Pz', 'CPz', 'Fpz', 'Fp2', 'AF8', 'AF4',
+                'AFz', 'Fz', 'F2', 'F4', 'F6', 'F8',
+                'FT8', 'FC6', 'FC4', 'FC2', 'FCz', 'Cz',
+                'C2', 'C4', 'C6', 'T8', 'TP8', 'CP6', 'CP4',
+                'CP2', 'P2', 'P4', 'P6', 'P8', 'P10', 'PO8',
+                'PO4', 'O2', 'UP', 'DOWN', 'LEFT', 'RIGHT',
+                'EXG5', 'EXG6', 'EXG7', 'EXG8', 'Status']
 
 eeg_channels = ['Fp1', 'AF7', 'AF3', 'F1', 'F3', 'F5', 'F7', 'FT7',
                 'FC5', 'FC3', 'FC1', 'C1', 'C3', 'C5', 'T7', 'TP7',
@@ -842,7 +841,7 @@ class EEG_Data:
             axs[i].axvline(percentile_95, color='m', linestyle='--', label=f'Percentil 95: {percentile_95:.2f}')
             axs[i].axvline(percentile_99, color='m', linestyle='--', label=f'Percentil 99: {percentile_99:.2f}')
             if i in artifact_components:
-                axs[i].set_title(f'Componente {i + 1}. Ha eliminar ')
+                axs[i].set_title(f'Componente {i + 1}. Hay que eliminar ')
             else:
                 axs[i].set_title(f'Componente {i + 1}. Distribución correcta')
 
@@ -993,7 +992,7 @@ class EEG_Data:
             self._visualize_signals_and_amplitudes(raw.times, sources, mean_abs_amplitude, max_peaks)
     
         high_indices = np.unique (np.concatenate((high_var_indices, high_amp_indices, high_peak_indices, high_norm_indices)))
-    
+        # high_indices = np.unique (np.concatenate((high_var_indices, high_amp_indices, high_peak_indices)))
         if self._DEBUG_GR:
             print (f"Combined high indices: {high_indices.tolist()}")
             self._plot_ica_components_distribution(raw.times, sources, title='Distribución de Componentes ICA', bins=20)

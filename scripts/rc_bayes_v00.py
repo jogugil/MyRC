@@ -142,6 +142,7 @@ def script_procesing_EEG (dataset_Younger, dataset_Older, ICA_flag = True):
 
  
 # Ejemplo de configuración inicial
+num_input = 64
 config_clus  = {
     'seed': 1,
     'init_type':'orthogonal',

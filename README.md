@@ -143,7 +143,7 @@ A[Adquisición de Datos] --> B[Preprocesamiento]
 - **Percentiles**:
   - Percentiles 25, 50 y 75.
 
-### 4. Modelado con Echo State Network (ESN) (MyRC.py)
+### 4. Modelado con Echo State Network (ESN) (MyRC_ESN.py)
 - **Reservoir Computing**:
   - Utilización de un modelo ESN que consiste en una red recurrente con una gran cantidad de neuronas y conexiones aleatorias.
   - Ajuste de los parámetros del ESN (ej. tamaño del reservoir, densidad de conexiones, factor de escala de las conexiones).

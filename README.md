@@ -49,7 +49,8 @@ Además hay que tener en cuena que se debe instarlar torch, dependerá del siste
 
 Puedes utilizar tanto el código que hay en los notebooks como los diferentes scripts existentes. Modifica y crea tus propios notebook con ayuda de los diferentes módulos desarrollados que contienen tanto el API del RC ESN como clases y funciones auxiliares para el tratamiento de este tipo de datos.
 
-## Procesos Desarrollados
+## Módulos presentes en el framework
+
  # Diagrama de Procesos
 
 ```mermaid
@@ -102,13 +103,14 @@ A[Adquisición de Datos] --> B[Preprocesamiento]
 - **Condiciones**: Grabación de señales EEG en estado de reposo.
 - **Equipamiento**: Utilización de un sistema de adquisición de EEG con múltiples canales (ej. 32 o 64 canales).
 
-### 2. Preprocesamiento de Señales EEG
+### 2. Preprocesamiento de Señales EEG (eeg.py)
 - **Filtrado**: Aplicar un filtro de banda (ej. 0.2-30 Hz) para eliminar artefactos de baja y alta frecuencia.
 - **Corrección de Artefactos**: Utilización de técnicas como Independent Component Analysis (ICA) para eliminar artefactos de movimiento ocular y musculares.
-- **Segmentación**: Dividir las señales EEG en ventanas de tiempo (ej. epochs de mne de 3 segundos sin solapamiento). (sólo si se realiza extracción de caracterísricas)
 
-### 3. Extracción de Características
-Se extraerán características tanto en el dominio del tiempo como en el dominio de la frecuencia para cada ventana de tiempo.
+
+### 3. Extracción de Características  (ExractFeatures.py)
+- **Segmentación**: Dividir las señales EEG en ventanas de tiempo (ej. epochs de mne de 3 segundos sin solapamiento). (sólo si se realiza extracción de caracterísricas)
+- Se extraerán características tanto en el dominio del tiempo como en el dominio de la frecuencia para cada ventana de tiempo.
 
 - **Transformada Wavelet (MODWT)**:
   - Energía
@@ -141,7 +143,7 @@ Se extraerán características tanto en el dominio del tiempo como en el dominio
 - **Percentiles**:
   - Percentiles 25, 50 y 75.
 
-### 4. Modelado con Echo State Network (ESN)
+### 4. Modelado con Echo State Network (ESN) (MyRC.py)
 - **Reservoir Computing**:
   - Utilización de un modelo ESN que consiste en una red recurrente con una gran cantidad de neuronas y conexiones aleatorias.
   - Ajuste de los parámetros del ESN (ej. tamaño del reservoir, densidad de conexiones, factor de escala de las conexiones).
@@ -152,7 +154,7 @@ Se extraerán características tanto en el dominio del tiempo como en el dominio
   - Entrenamiento del ESN con el conjunto de datos de entrenamiento.
   - Validación cruzada para evitar sobreajuste.
 
-### 5. Análisis de Resultados
+### 5. Análisis de Resultados (Utils.py//diferentes notebooks)
 - **Evaluación del Modelo**:
   - Medición de la precisión del modelo en la clasificación de las señales EEG entre jóvenes adultos y adultos mayores.
   - Utilización de métricas como precisión, sensibilidad, especificidad y área bajo la curva ROC (AUC-ROC).

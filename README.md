@@ -154,7 +154,7 @@ A[Adquisición de Datos] --> B[Preprocesamiento]
   - Entrenamiento del ESN con el conjunto de datos de entrenamiento.
   - Validación cruzada para evitar sobreajuste.
 
-### 5. Análisis de Resultados (Utils.py//diferentes notebooks)
+### 5. Análisis de Resultados (utils.py//diferentes notebooks)
 - **Evaluación del Modelo**:
   - Medición de la precisión del modelo en la clasificación de las señales EEG entre jóvenes adultos y adultos mayores.
   - Utilización de métricas como precisión, sensibilidad, especificidad y área bajo la curva ROC (AUC-ROC).

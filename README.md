@@ -9,7 +9,7 @@ El framework se utilizará tanto para datos sintéticos como para analizar seña
 El framework contiene diversas librerías de Python con clases y funciones diseñadas para abarcar todo el ciclo del estudio, desde el tratamiento de datos hasta la evaluación de resultados.
 ![imagen](https://github.com/jogugil/MyRC/assets/15160072/7e10c9c7-80aa-42c3-9445-b2cc5c6e31c7)
 
-En la documentación del proyecto ([wiki TFG](https://github.com/jogugil/MyRC/wiki)) se comenta tanto las funciones y API de los diferentes módulos del framework (apartado 6 de la documentación) como la teoría que soporta cada módulo. Del mismo modo, en el subdirectorio `memoria` ([memoria](https://github.com/jogugil/MyRC/memoria))  se tiene un resumen a modo artículo del proyecto y otro resumen de una página como poster del proyecto. 
+En la documentación del proyecto ([wiki TFG](https://github.com/jogugil/MyRC/wiki)) se comenta tanto las funciones y API de los diferentes módulos del framework (apartado 6 de la documentación) como la teoría que soporta cada módulo. Del mismo modo, en el subdirectorio [memoria](https://github.com/jogugil/MyRC/main/memoria)  se tiene un resumen del proyecto a modo artículo y otro resumen de una página como poster del proyecto. 
 
 # Estructura del Proyecto
 
